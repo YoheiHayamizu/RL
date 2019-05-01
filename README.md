@@ -1,35 +1,32 @@
-pydev
+Description
 ===
-説明
+This repository is for learning RL.
+Variety of methods are implemented and stored in this repository.
+
+
+How to use Git --Rule--
 ---
-強化学習の勉強用  
-いろいろな手法を実装してみる
+* Branch Name
+`master`  -> Branch for release(don't update this branch except release)  
+`develop` -> Branch for develop
+`feature/*` -> Branch for implementing new features
+`hotfix/*` -> Branch for Bug-fix(Only harmful bugs)
+Prefixes of commit messages should be the names of which is the upstream directory except feature and hotfix  
 
+* Commit   
+Commit should be with prefix for being managed well  
 
-gitの使用について
----
-* ブランチ名
-`master`  -> リリース用ブランチ(リリース時以外更新しない)  
-`develop` -> 開発用ブランチ
-`feature/*` -> 機能実装用ブランチ
-`hotfix/*` -> バグ修正用ブランチ(大規模バグの場合のみ)
-featureとhotfix以外は, 適宜コミットメッセージのprefix(choreなど)を上位ディレクトリ名とすること．
+Refer to the website how to use prefix.   
+https://qiita.com/numanomanu/items/45dd285b286a1f7280ed 
+ 
+  * **feat**: new feature
+  * **fix**: bug fix
+  * **docs**: update only documents modified 
+  * **style**: update code styles（except for new feature such like line spaces and comments）
+  * **refactor**: update features (except for new features and styles)
+  * **perf**: update performance of features
+  * **test**: add test for features
+  * **chore**: update Makefile,library,tools and etc.
 
-* コミット  
-コメントは基本的に英語で書く(端末上で日本語が文字化けして読めないことが多く, 緊急時にログが確認できないと困るため)．<br>  
-コミット時のコメントにはprefixをつけて管理する.  
-prefixの付け方は以下のサイトを参照.   
-https://qiita.com/numanomanu/items/45dd285b286a1f7280ed  
-  
-  * **feat**: 新機能実装
-  * **fix**: バグの修正
-  * **docs**: ドキュメントのみの変更 
-  * **style**: コード内のスタイルの変更（改行やフォーマットなどの機能以外の変更）
-  * **refactor**: 修正や新機能以外のコードの修正
-  * **perf**: 機能のパフォーマンス向上
-  * **test**: 機能テストの追加
-  * **chore**: Makefile,ライブラリ,その他の補足ツールの変更
-
-* プルリクエスト  
-プルリクエストのタイトルにも，コミットメッセージと同様のprefixを付ける．
-
+* Pull Request  
+The title of pull request should be with prefix, as well as commit message.
