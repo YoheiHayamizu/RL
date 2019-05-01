@@ -1,5 +1,7 @@
 #image files
-image/
+images/
+figures/
+movies/
 
 #log files
 .csv
