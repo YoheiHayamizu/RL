@@ -1,8 +1,8 @@
 import gym
-import methods
+import qlearning
+import sarsa
 import cv2
 import matplotlib.pyplot as plt
-import csv
 
 EPISODE = 2000
 TIMESTEP = 200
@@ -34,9 +34,10 @@ def display_frames_as_gif(frames, i_episode, _dir):
     del video
 
 
+
 def discrete_qlearning():
     env = gym.make('CartPole-v0')
-    agent = methods.QLearning(4, 2)
+    agent = qlearning.QLearning(4, 2)
     timestep_list = list()
 
     for episode in range(EPISODE):
@@ -80,7 +81,7 @@ def discrete_qlearning():
 
 def discrete_sarsa():
     env = gym.make('CartPole-v0')
-    agent = methods.Sarsa(4, 2)
+    agent = sarsa.Sarsa(4, 2)
     timestep_list = list()
 
     for episode in range(EPISODE):
@@ -122,5 +123,42 @@ def discrete_sarsa():
     return timestep_list
 
 
-discrete_qlearning()
-discrete_sarsa()
+import csv
+import pandas as pd
+import seaborn as sns;
+
+sns.set()
+
+df = pd.DataFrame(columns={"steps", "episode", "seed"})
+for i in range(10):
+    timestep_lists = discrete_qlearning()
+    tmp = pd.DataFrame(columns={"steps", "episode", "seed"})
+    tmp["steps"] = timestep_lists
+    tmp["episode"] = range(len(timestep_lists))
+    tmp["seed"] = [i] * len(timestep_lists)
+    df.append(tmp)
+fig, ax = plt.subplots()
+sns.lineplot(x="episode", y="steps", hue="seed", data=df)
+# legend = ax.legend()
+# legend.texts[0].set_text("Whatever else")
+plt.legend(loc='lower right', bbox_to_anchor=(1, 0), ncol=1)
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
+plt.savefig(FIG_DIR + "QLearning-seed.png")
+
+df = pd.DataFrame(columns={"steps", "episode", "seed"})
+for i in range(10):
+    timestep_lists = discrete_sarsa()
+    tmp = pd.DataFrame(columns={"steps", "episode", "seed"})
+    tmp["steps"] = timestep_lists
+    tmp["episode"] = range(len(timestep_lists))
+    tmp["seed"] = [i] * len(timestep_lists)
+    df.append(tmp)
+fig, ax = plt.subplots()
+sns.lineplot(x="episode", y="steps", hue="seed", data=df)
+# legend = ax.legend()
+# legend.texts[0].set_text("Whatever else")
+plt.legend(loc='lower right', bbox_to_anchor=(1, 0), ncol=1)
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
+plt.savefig(FIG_DIR + "Sarsa-seed.png")
