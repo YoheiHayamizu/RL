@@ -7,7 +7,7 @@ movies/
 #log files
 .csv
 .txt
-.DStore
+.DS_Store
 
 #picle files
 .picle
