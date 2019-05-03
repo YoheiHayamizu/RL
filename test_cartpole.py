@@ -120,6 +120,7 @@ def discrete_sarsa():
     ax.set_ylabel("Step")
     ax.set_title("Sarsa")
     plt.savefig(FIG_DIR + "Sarsa.png")
+    plt.close()
     env.close()
     return timestep_list
 
