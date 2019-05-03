@@ -1,11 +1,13 @@
-#image files
+#dirs
 images/
 figures/
 movies/
+.idea/
 
 #log files
 .csv
 .txt
+.DStore
 
 #picle files
 .picle
