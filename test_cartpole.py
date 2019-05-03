@@ -46,7 +46,7 @@ def discrete_qlearning():
         action = env.action_space.sample()
         frames = list()
         for t in range(TIMESTEP):
-            if episode + 1 in RECORD_EPS:
+            if episode + 1 in RECORD_EPS and VIDEO:
                 frames.append(env.render(mode='rgb_array'))
 
             pre_observation = observation
@@ -67,7 +67,7 @@ def discrete_qlearning():
                 agent.update(pre_observation, pre_action, reward, observation)
 
         timestep_list.append(t)
-        if episode + 1 in RECORD_EPS:
+        if episode + 1 in RECORD_EPS and VIDEO:
             display_frames_as_gif(frames, episode, "QLearning/")
 
     fig, ax = plt.subplots()
@@ -133,25 +133,24 @@ sns.set()
 df = pd.DataFrame(columns={"steps", "episode", "seed", "method"})
 for i in range(10):
     timestep_lists = discrete_qlearning()
-    tmp = pd.DataFrame(columns={"steps", "episode", "seed"})
+    tmp = pd.DataFrame(columns={"steps", "episode", "seed", "method"})
     tmp["steps"] = list(map(float, timestep_lists))
     tmp["episode"] = tmp.index
     tmp.loc[:, "seed"] = "{0}".format(i)
+    tmp.loc[:, "method"] = "QLearning"
     df = pd.concat([df, tmp], ignore_index=True)
 
-fig, ax = plt.subplots()
-plotline = sns.lineplot(x="episode", y="steps", data=df, ax=ax)
-plt.savefig(FIG_DIR + "QLearning-seed.png")
-
-df = pd.DataFrame(columns={"steps", "episode", "seed"})
-for i in range(10):
     timestep_lists = discrete_sarsa()
-    tmp = pd.DataFrame(columns={"steps", "episode", "seed"})
+    tmp = pd.DataFrame(columns={"steps", "episode", "seed", "method"})
     tmp["steps"] = list(map(float, timestep_lists))
     tmp["episode"] = tmp.index
     tmp.loc[:, "seed"] = "{0}".format(i)
+    tmp.loc[:, "method"] = "Sarsa"
     df = pd.concat([df, tmp], ignore_index=True)
 
 fig, ax = plt.subplots()
-plotline = sns.lineplot(x="episode", y="steps", data=df, ax=ax)
-plt.savefig(FIG_DIR + "Sarsa-seed.png")
+plotline = sns.lineplot(x="episode", y="steps", hue="method", data=df, ax=ax)
+plt.legend(loc='lower right', bbox_to_anchor=(1, 0), ncol=1)
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
+plt.savefig(FIG_DIR + "converge.png")
