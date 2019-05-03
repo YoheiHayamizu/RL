@@ -21,7 +21,7 @@ def display_frames_as_gif(frames, i_episode, _dir):
         cv2.imwrite(framename, frame)
         framelist.append(framename)
 
-    # 動画作成
+    # create movie
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
     video = cv2.VideoWriter(MOVIE_DIR + _dir + 'cartpole_{0:04d}.mp4'.format(i_episode + 1),
                             fourcc, 20.0, (imgsize_x, imgsize_y))
@@ -133,32 +133,30 @@ df = pd.DataFrame(columns={"steps", "episode", "seed"})
 for i in range(10):
     timestep_lists = discrete_qlearning()
     tmp = pd.DataFrame(columns={"steps", "episode", "seed"})
-    tmp["steps"] = timestep_lists
-    tmp["episode"] = range(len(timestep_lists))
-    tmp["seed"] = [i] * len(timestep_lists)
-    df.append(tmp)
+    tmp["steps"] = list(map(float, timestep_lists))
+    tmp["episode"] = tmp.index
+    tmp.loc[:, "seed"] = "{0}".format(i)
+    df = pd.concat([df, tmp], ignore_index=True)
+
 fig, ax = plt.subplots()
-sns.lineplot(x="episode", y="steps", hue="seed", data=df)
-# legend = ax.legend()
-# legend.texts[0].set_text("Whatever else")
-plt.legend(loc='lower right', bbox_to_anchor=(1, 0), ncol=1)
-handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
+plotline = sns.lineplot(x="episode", y="steps", data=df, ax=ax)
+# plt.legend(loc='lower right', bbox_to_anchor=(1, 0), ncol=1)
+# handles, labels = ax.get_legend_handles_labels()
+# ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
 plt.savefig(FIG_DIR + "QLearning-seed.png")
 
 df = pd.DataFrame(columns={"steps", "episode", "seed"})
 for i in range(10):
     timestep_lists = discrete_sarsa()
     tmp = pd.DataFrame(columns={"steps", "episode", "seed"})
-    tmp["steps"] = timestep_lists
-    tmp["episode"] = range(len(timestep_lists))
-    tmp["seed"] = [i] * len(timestep_lists)
-    df.append(tmp)
+    tmp["steps"] = list(map(float, timestep_lists))
+    tmp["episode"] = tmp.index
+    tmp.loc[:, "seed"] = "{0}".format(i)
+    df = pd.concat([df, tmp], ignore_index=True)
+
 fig, ax = plt.subplots()
-sns.lineplot(x="episode", y="steps", hue="seed", data=df)
-# legend = ax.legend()
-# legend.texts[0].set_text("Whatever else")
-plt.legend(loc='lower right', bbox_to_anchor=(1, 0), ncol=1)
-handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
+plotline = sns.lineplot(x="episode", y="steps", data=df, ax=ax)
+# plt.legend(loc='lower right', bbox_to_anchor=(1, 0), ncol=1)
+# handles, labels = ax.get_legend_handles_labels()
+# ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
 plt.savefig(FIG_DIR + "Sarsa-seed.png")
