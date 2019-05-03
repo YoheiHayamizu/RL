@@ -4,7 +4,7 @@ import sarsa
 import cv2
 import matplotlib.pyplot as plt
 
-EPISODE = 2000
+EPISODE = 1000
 TIMESTEP = 200
 RECORD_EPS = [100, 500, 1000, 2000]
 VIDEO = False  # record flag
