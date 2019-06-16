@@ -1,8 +1,11 @@
 import gym
-import qlearning
-import sarsa
+from agent import qlearning, sarsa
 import cv2
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+sns.set()
 
 EPISODE = 1000
 TIMESTEP = 200
@@ -33,7 +36,6 @@ def display_frames_as_gif(frames, i_episode, _dir):
     video.release()
     del fourcc
     del video
-
 
 
 def discrete_qlearning():
@@ -124,12 +126,6 @@ def discrete_sarsa():
     env.close()
     return timestep_list
 
-
-import csv
-import pandas as pd
-import seaborn as sns;
-
-sns.set()
 
 df = pd.DataFrame(columns={"steps", "episode", "seed", "method"})
 for i in range(10):
