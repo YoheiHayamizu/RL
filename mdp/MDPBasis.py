@@ -4,9 +4,8 @@ import copy
 class MDPBasisClass(object):
     """ abstract class for a MDP """
 
-    def __init__(self, init_state, actions, fin_state, transition_func, reward_func, step_cost):
+    def __init__(self, init_state, actions, transition_func, reward_func, step_cost):
         self.init_state = copy.deepcopy(init_state)
-        self.fin_state = copy.deepcopy(fin_state)
         self.cur_state = self.init_state
         self.actions = actions
         self.__transition_func = transition_func
@@ -31,16 +30,13 @@ class MDPBasisClass(object):
     def get_cur_state(self):
         return self.cur_state
 
-    def get_fin_state(self):
-        return self.fin_state
-
     def get_actions(self):
         return self.actions
 
-    def get_transition_function(self):
+    def get_transition_func(self):
         return self.__transition_func
 
-    def get_reward_function(self):
+    def get_reward_func(self):
         return self.__reward_func
 
     def get_step_cost(self):
@@ -65,15 +61,17 @@ class MDPBasisClass(object):
     def step(self, action):
         """
         :param action: <str>
-        :return: observation: <MDPStateClass>, reward: <float>, done: <bool>, info: <dict>
+        :return: observation: <MDPStateClass>,
+                 reward: <float>,
+                 done: <bool>,
+                 info: <dict>
         """
         next_state = self.__transition_func(self.cur_state, action)
-        reward = self.__reward_func(self.cur_state, action)
-        done = (next_state == self.fin_state)
-        observation = next_state
+        reward = self.__reward_func(self.cur_state, action, next_state)
+        done = next_state._is_terminal
         self.cur_state = next_state
 
-        return observation, reward, done, self.get_params()
+        return self, reward, done, self.get_params()
 
     def reset(self):
         self.cur_state = self.init_state
