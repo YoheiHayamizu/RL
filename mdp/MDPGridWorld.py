@@ -1,5 +1,5 @@
 from mdp.MDPBasis import MDPBasisClass
-from mdp.MDPState import MDPStateClass
+from movies.MDPState import MDPStateClass
 from mdp.GridWorldConstants import *
 import random
 
@@ -11,7 +11,7 @@ class MDPGridWorld(MDPBasisClass):
                  is_goal_terminal=True, is_rand_init=False,
                  slip_prob=0.0, step_cost=0.0, hole_cost=1.0,
                  name="gridworld"
-                 ):
+                 ) -> object:
         """
         Constructor of MDPMaze
         :param width: <int> width of maze
@@ -20,7 +20,7 @@ class MDPGridWorld(MDPBasisClass):
         :param goals_loc: <list<tuple>> goal states
         :param walls_loc: <list<tuple>> walls
         :param holes_loc: <list<tuple>> holes
-        :param is_goal_terminal: <bool> if true, episode will terminate when agent reaches fin_locs
+        :param is_goal_terminal: <bool> if true, episode will terminate when agent reaches goals_loc
         :param is_rand_init: <bool> if true, init_loc is decided randomly
         :param slip_prob: <float> probability of that agent actions fail
         :param step_cost: <float> cost of one action
@@ -109,7 +109,7 @@ class MDPGridWorld(MDPBasisClass):
         :return: next_state <State>
         """
 
-        if state._is_terminal:
+        if state.is_terminal():
             return state
 
         if self.slip_prob > random.random():
@@ -151,7 +151,7 @@ class MDPGridWorld(MDPBasisClass):
         :param next_state: <State>
         :return: reward <float>
         """
-        if next_state.is_terminal:
+        if next_state.is_terminal():
             return 1 - self.step_cost
         elif (next_state.x, next_state.y) in self.holes:
             return -self.hole_cost
@@ -171,6 +171,9 @@ class MDPGridWorldState(MDPStateClass):
         self.y = round(y, ROUND_OFF)
         super().__init__(data=(self.x, self.y), is_terminal=is_terminal)
 
+    def __hash__(self):
+        return hash(tuple(self.data))
+
     def __str__(self):
         return "s: ({0}, {1})".format(self.x, self.y)
 
@@ -187,9 +190,9 @@ if __name__ == "__main__":
     grid_world.reset()
     observation = grid_world
     for t in range(100):
-        action = random.choice(ACTIONS)
-        print(observation.cur_state, action)
-        observation, reward, done, info = grid_world.step(action)
+        random_action = random.choice(ACTIONS)
+        print(observation.get_cur_state(), random_action)
+        observation, reward, done, info = grid_world.step(random_action)
         if done:
             print("Goal!")
             exit()
