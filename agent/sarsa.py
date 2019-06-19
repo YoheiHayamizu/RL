@@ -1,33 +1,100 @@
+from agent.AgentBasis import AgentBasisClass
+from collections import defaultdict
 import numpy as np
-import space
 
 
-class Sarsa:
-    def __init__(self, dim_state, dim_action, alpha=0.5, gamma=0.99):
-        self.num_state = space.NUM_DIGITIZED ** dim_state
-        self.num_action = dim_action
-        self.alpha = alpha
-        self.gamma = gamma
-        self.Q = np.zeros((self.num_state, self.num_action))
+class SarsaAgent(AgentBasisClass):
+    def __init__(self, actions, name="SarsaAgent", alpha=0.5, gamma=0.99, epsilon=0.1, explore="uniform"):
+        super().__init__(name, actions, gamma)
+        self.alpha, self.init_alpha = alpha, alpha
+        self.epsilon, self.init_epsilon = epsilon, epsilon
+        self.explore = explore
+        self.step_number = 0
 
-    def update(self, observation, action, reward, next_observation, next_action):
-        state = space.digitize_state(observation)
-        next_state = space.digitize_state(next_observation)
-        self.Q[state][action] += self.alpha * (
-                reward + self.gamma * self.Q[next_state][next_action] - self.Q[state][action])
+        self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
 
-    def get_max_action(self, observation):
-        state = space.digitize_state(observation)
-        action, = np.where(self.Q[state] == np.max(self.Q[state]))
-        return np.random.choice(action)
+        # Accessors
 
-    def epsilon_greedy(self, observation, t):
-        epsilon = np.exp(-t/10)
-        if np.random.random() >= epsilon:
-            action = self.get_max_action(observation)
+    def get_params(self):
+        params = self.get_params()
+        params["alpha"] = self.alpha
+        params["epsilon"] = self.epsilon
+        params["explore"] = self.explore
+        params["Q"] = self.Q
+        return params
+
+    def get_alpha(self):
+        return self.alpha
+
+    def get_q_val(self, state, action):
+        return self.Q[state][action]
+
+        # Setters
+
+    def set_alpha(self, new_alpha):
+        self.alpha = new_alpha
+
+        # Core
+
+    def act(self, state):
+        if self.explore == "uniform":
+            action = self._epsilon_greedy_policy(state)
+        elif self.explore == "softmax":
+            action = self._soft_max_policy(state)
+        elif self.explore == "random":
+            action = np.random.choice(self.actions)
         else:
-            action = np.random.randint(0, 2)
+            action = self._epsilon_greedy_policy(state)  # default
+
+        self.step_number += 1
+
         return action
 
-    def greedy(self, observation):
-        return self.get_max_action(observation)
+    def update(self, state, action, reward, learning=True):
+        pre_state = self.get_pre_state()
+        pre_action = self.get_pre_action()
+        if learning:
+            if pre_state is None:
+                self.set_pre_state(state)
+                self.set_pre_action(action)
+                return
+
+            diff = self.gamma * self.get_q_val(state, action) - self.get_q_val(pre_state, pre_action)
+            self.Q[pre_state][pre_action] += self.alpha * (reward + diff)
+
+        self.set_pre_state(state)
+        self.set_pre_action(action)
+
+    def reset(self):
+        self.alpha = self.init_alpha
+        self.epsilon = self.init_epsilon
+        self.episode_number = 0
+        self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
+
+    def _get_max_q_key(self, state):
+        return self._get_max_q(state)[0]
+
+    def _get_max_q_val(self, state):
+        return self._get_max_q(state)[1]
+
+    def _get_max_q(self, state):
+        best_action = np.random.choice(self.actions)
+        actions = self.actions[:]
+        np.random.shuffle(actions)
+        max_q_val = float("-inf")
+        for key in actions:
+            q_val = self.get_q_val(state, key)
+            if q_val > max_q_val:
+                best_action = key
+                max_q_val = q_val
+        return best_action, max_q_val
+
+    def _soft_max_policy(self, state):
+        pass
+
+    def _epsilon_greedy_policy(self, state):
+        if self.epsilon > np.random.random():
+            action = np.random.choice(self.actions)
+        else:
+            action = self._get_max_q_key(state)
+        return action

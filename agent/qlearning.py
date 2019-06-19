@@ -6,10 +6,9 @@ import numpy as np
 class QLearningAgent(AgentBasisClass):
     def __init__(self, actions, name="QLearningAgent", alpha=0.5, gamma=0.99, epsilon=0.1, explore="uniform"):
         super().__init__(name, actions, gamma)
-        self.alpha = alpha
-        self.epsilon = epsilon
+        self.alpha, self.init_alpha = alpha, alpha
+        self.epsilon, self.init_epsilon = epsilon, epsilon
         self.explore = explore
-        self.step_number = 0
 
         self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
 
@@ -36,10 +35,7 @@ class QLearningAgent(AgentBasisClass):
 
     # Core
 
-    def act(self, state, reward, learning=True):
-        if learning:
-            self.update(self.pre_state, self.pre_action, reward, state)
-
+    def act(self, state):
         if self.explore == "uniform":
             action = self._epsilon_greedy_policy(state)
         elif self.explore == "softmax":
@@ -49,19 +45,30 @@ class QLearningAgent(AgentBasisClass):
         else:
             action = self._epsilon_greedy_policy(state)  # default
 
-        self.set_pre_state(state)
-        self.set_pre_action(action)
         self.step_number += 1
 
-        action = self._get_max_q_key(state)
         return action
 
-    def update(self, state, action, reward, next_state):
-        if state is None:
-            return
+    def update(self, state, action, reward, learning=True):
+        pre_state = self.get_pre_state()
+        pre_action = self.get_pre_action()
+        if learning:
+            if pre_state is None:
+                self.set_pre_state(state)
+                self.set_pre_action(action)
+                return
 
-        diff = self.gamma * self.Q[state][action] - self._get_max_q_val(next_state)
-        self.Q[state][action] += self.alpha * (reward + diff)
+            diff = self.gamma * self._get_max_q_val(state) - self.get_q_val(pre_state, pre_action)
+            self.Q[pre_state][pre_action] += self.alpha * (reward + diff)
+
+        self.set_pre_state(state)
+        self.set_pre_action(action)
+
+    def reset(self):
+        self.alpha = self.init_alpha
+        self.epsilon = self.init_epsilon
+        self.episode_number = 0
+        self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
 
     def _get_max_q_key(self, state):
         return self._get_max_q(state)[0]

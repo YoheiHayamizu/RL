@@ -7,6 +7,7 @@ class AgentBasisClass:
         self.actions = actions
         self.gamma = gamma
         self.episode_number = 0
+        self.step_number = 0
         self.pre_state = None
         self.pre_action = None
 
@@ -60,9 +61,14 @@ class AgentBasisClass:
 
     # Core
 
-    def act(self, state, reward): ...
+    def act(self, state): ...
 
     def reset(self):
         self.episode_number = 0
+        self.pre_state = None
+        self.pre_action = None
+
+    def end_of_episode(self):
+        self.step_number = 0
         self.pre_state = None
         self.pre_action = None
