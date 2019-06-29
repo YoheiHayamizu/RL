@@ -1,5 +1,5 @@
 from mdp.MDPBasis import MDPBasisClass
-from movies.MDPState import MDPStateClass
+from mdp.MDPState import MDPStateClass
 from mdp.GridWorldConstants import *
 import random
 
