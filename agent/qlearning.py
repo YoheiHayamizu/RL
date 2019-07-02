@@ -1,6 +1,7 @@
 from agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
+import random
 
 
 class QLearningAgent(AgentBasisClass):
@@ -77,7 +78,7 @@ class QLearningAgent(AgentBasisClass):
         return self._get_max_q(state)[1]
 
     def _get_max_q(self, state):
-        best_action = np.random.choice(self.actions)
+        best_action = random.choice(self.actions)
         actions = self.actions[:]
         np.random.shuffle(actions)
         max_q_val = float("-inf")
@@ -93,7 +94,7 @@ class QLearningAgent(AgentBasisClass):
 
     def _epsilon_greedy_policy(self, state):
         if self.epsilon > np.random.random():
-            action = np.random.choice(self.actions)
+            action = random.choice(self.actions)
         else:
             action = self._get_max_q_key(state)
         return action

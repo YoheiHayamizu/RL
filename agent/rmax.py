@@ -1,6 +1,7 @@
 from agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
+import random
 
 
 class RMAXAgent(AgentBasisClass):
@@ -90,6 +91,7 @@ class RMAXAgent(AgentBasisClass):
         for l in range(1, lim):
             for s in self.C_sas.keys():
                 for a in self.C_sas[s].keys():
+                    print(self.r_sum[s][a])
                     self.Q[s][a] = max([self.get_transition(s, a, sp) *
                                         (self.get_reward(s, a, sp) + self.gamma * self._get_max_q_val(sp))
                                         for sp in self.C_sas[s][a].keys()])
@@ -110,7 +112,7 @@ class RMAXAgent(AgentBasisClass):
         return self._get_max_q(state)[1]
 
     def _get_max_q(self, state):
-        best_action = np.random.choice(self.actions)
+        best_action = random.choice(self.actions)
         actions = self.actions[:]
         np.random.shuffle(actions)
         max_q_val = float("-inf")
