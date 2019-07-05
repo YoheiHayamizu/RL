@@ -1,5 +1,7 @@
 from mdp.MDPGridWorld import MDPGridWorld
-from mdp.GridWorldConstants import *
+import mdp.GridWorldConstants as GridConstant
+from mdp.MDPGraphWorld import MDPGraphWorld
+import mdp.GraphWorldConstants as GraphConstant
 
 from agent.qlearning import QLearningAgent
 from agent.sarsa import SarsaAgent
@@ -32,7 +34,7 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
             step_list_dict[str(method)][s] = reward_list
 
         end = time.perf_counter()
-        time_dict[str(method)] = round(end - start, ROUND_OFF)
+        time_dict[str(method)] = round(end - start, GridConstant.ROUND_OFF)
 
     # plot and save step time
     step_plot = pd.DataFrame(step_list_dict)
@@ -40,7 +42,7 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     for m in step_plot.keys():
         for s in step_plot[m].keys():
             step_plot_df = step_plot_df.append(episode_data_to_df(step_plot, m, s))
-    save_figure(step_plot_df, FIG_DIR + "converge.png")
+    save_figure(step_plot_df, FIG_DIR + "converge_{0}.png".format(mdp.name))
 
     # plot and save run time
     time_plot = pd.DataFrame(time_dict.items(), columns=["method", "time"])
@@ -50,7 +52,11 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     ax.set_ylabel('Run Time[s]')
     ax.set_title('Run Time by methods')
     ax.set_xticks(range(len(time_plot["method"])))
-    plt.savefig(FIG_DIR + "runtime.png")
+    plt.savefig(FIG_DIR + "runtime_{0}.png".format(mdp.name))
+
+    # q table to csv
+    for method in methods:
+        method.q_to_csv(FIG_DIR + "qtable_{0}.csv".format(method.name))
 
 
 def run_episodes(mdp, method, step=50, episode=100):
@@ -58,17 +64,22 @@ def run_episodes(mdp, method, step=50, episode=100):
     for e in range(episode):
         print("-------- new episode: {0:04} starts --------".format(e))
         mdp.reset()
+        method.reset_of_episode()
         state = mdp.get_cur_state()
         action = method.act(state)
         for t in range(1, step):
+            method.set_actions(state, mdp.get_actions())
+            # print(method.actions[state])
             mdp, reward, done, info = mdp.step(action)
             state = mdp.get_cur_state()
             action = method.act(state)
             method.update(state, action, reward)
+            # print(method.Q[state], reward)
+            # print(mdp.get_cur_state(), action)
+            # print(method.Q)
             if done:
                 break
         step_list.append(method.step_number)
-        method.end_of_episode()
     return step_list
 
 
@@ -98,13 +109,21 @@ if __name__ == "__main__":
     grid_world = MDPGridWorld(5, 5,
                               init_loc=(0, 0), goals_loc=[(4, 4)], walls_loc=[], holes_loc=[],
                               is_goal_terminal=True, is_rand_init=False,
-                              slip_prob=0.4, step_cost=0.0, hole_cost=1.0,
+                              slip_prob=0.0, step_cost=1.0, hole_cost=1.0,
                               name="gridworld")
+    graph_world = MDPGraphWorld(node_num=15, is_goal_terminal=True, step_cost=1.0, success_rate=GraphConstant.success_rate_dict2)
 
-    qLearning = QLearningAgent(ACTIONS, name="QLearning", alpha=0.1, gamma=0.99, epsilon=0.1, explore="uniform")
-    sarsa = SarsaAgent(ACTIONS, name="Sarsa", alpha=0.1, gamma=0.99, epsilon=0.1, explore="uniform")
-    rmax = RMAXAgent(ACTIONS, "RMAX", rmax=1.0, u_count=2, gamma=0.9, epsilon_one=0.99)
-    # methods = [qLearning, sarsa]
+    # mdp = grid_world
+    mdp = graph_world
+
+    qLearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=0.1, gamma=0.99, epsilon=0.1, explore="uniform")
+    sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=0.1, gamma=0.99, epsilon=0.1, explore="uniform")
+    rmax = RMAXAgent(mdp.get_actions(), "RMAX", rmax=10.0, u_count=2, gamma=0.95, epsilon_one=0.99)
+
     methods = [qLearning, sarsa, rmax]
+    # methods = [qLearning, sarsa]
     # methods = [rmax]
-    run_experiment(grid_world, methods, step=50, seed=10, episode=500)
+
+    run_experiment(mdp, methods, step=100, seed=10, episode=500)
+
+
