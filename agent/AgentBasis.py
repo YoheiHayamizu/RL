@@ -1,10 +1,12 @@
 import numpy as np
+from collections import defaultdict
 
 
 class AgentBasisClass:
     def __init__(self, name, actions, gamma=0.99):
         self.name = name
-        self.actions = actions
+        self.actions = defaultdict(lambda: actions)
+        self.init_actions = self.actions
         self.gamma = gamma
         self.episode_number = 0
         self.step_number = 0
@@ -50,8 +52,8 @@ class AgentBasisClass:
     def set_gamma(self, new_gamma):
         self.gamma = new_gamma
 
-    def set_actions(self, new_actions):
-        self.actions = new_actions
+    def set_actions(self, state, new_actions):
+        self.actions[state] = new_actions
 
     def set_pre_state(self, state):
         self.pre_state = state
@@ -68,7 +70,8 @@ class AgentBasisClass:
         self.pre_state = None
         self.pre_action = None
 
-    def end_of_episode(self):
+    def reset_of_episode(self):
         self.step_number = 0
+        self.actions = self.init_actions
         self.pre_state = None
         self.pre_action = None

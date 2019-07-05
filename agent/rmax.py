@@ -1,6 +1,7 @@
 from agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
+import pandas as pd
 import random
 
 
@@ -12,9 +13,10 @@ class RMAXAgent(AgentBasisClass):
         self.rmax, self.init_rmax = rmax, rmax
 
         self.Q = defaultdict(lambda: defaultdict(lambda: self.rmax))
+        self.V = defaultdict(lambda: 0.0)
         self.C_sa = defaultdict(lambda: defaultdict(lambda: 0))
         self.C_sas = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-        self.r_sum = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0.0)))
+        self.rewards = defaultdict(lambda: defaultdict(list))
 
     # Accessors
 
@@ -32,10 +34,12 @@ class RMAXAgent(AgentBasisClass):
     def get_q_val(self, state, action):
         return self.Q[state][action]
 
-    def get_reward(self, state, action, next_state):
+    def get_reward(self, state, action):
         if self.get_count(state, action) >= self.u_count:
-            return self.get_r_sum(state, action, next_state) / self.get_count(state, action, next_state)
+            # print(float(sum(self.rewards[state][action])) / self.get_count(state, action))
+            return float(sum(self.rewards[state][action])) / self.get_count(state, action)
         else:
+            # print(self.rmax)
             return self.rmax
 
     def get_transition(self, state, action, next_state):
@@ -47,9 +51,6 @@ class RMAXAgent(AgentBasisClass):
             return self.C_sa[state][action]
         else:
             return self.C_sas[state][action][next_state]
-
-    def get_r_sum(self, state, action, next_state):
-        return self.r_sum[state][action][next_state]
 
     # Setters
 
@@ -77,24 +78,44 @@ class RMAXAgent(AgentBasisClass):
 
             self.C_sa[pre_state][pre_action] += 1
             self.C_sas[pre_state][pre_action][state] += 1
-            self.r_sum[pre_state][pre_action][state] += reward
-
+            self.rewards[pre_state][pre_action] += [reward]
             if self.get_count(pre_state, pre_action) <= self.u_count:
                 if self.u_count == self.get_count(pre_state, pre_action):
-                    self._update_value_iteration()
+                    self._update_policy_iteration()
 
         self.set_pre_state(state)
         self.set_pre_action(action)
 
-    def _update_value_iteration(self):
+    def _update_policy_iteration(self):
         lim = int(np.log(1 / (self.epsilon_one * (1 - self.gamma))) / (1 - self.gamma))
         for l in range(1, lim):
-            for s in self.C_sas.keys():
-                for a in self.C_sas[s].keys():
-                    print(self.r_sum[s][a])
-                    self.Q[s][a] = max([self.get_transition(s, a, sp) *
-                                        (self.get_reward(s, a, sp) + self.gamma * self._get_max_q_val(sp))
-                                        for sp in self.C_sas[s][a].keys()])
+            for s in self.C_sa.keys():
+                for a in self.C_sa[s].keys():
+                    if self.get_count(s, a) >= self.u_count:
+                        self.Q[s][a] = self.get_reward(s, a) + self.gamma * \
+                                       sum([(self.get_transition(s, a, sp) * self._get_max_q_val(sp))
+                                            for sp in self.Q.keys()])
+
+    # def _update_policy_iteration(self, tolerance=1e-6):
+    #     dv = tolerance
+    #     v = defaultdict(lambda: 0.0)
+    #     while dv >= tolerance:
+    #         dv = 0.0
+    #         vi = v
+    #         for s in self.C_sas.keys():
+    #             for a in self.C_sas[s].keys():
+    #                 for sp in self.C_sas[s][a].keys():
+    #                     self.V[s] += self.get_transition(s, a, sp) * (self.get_reward(s, a, sp) + self.gamma * v[s])
+    #             if abs(v[s] - vi[s]) > dv:
+    #                 dv = abs(v[s] - vi[s])
+    #     self.V = v
+    #
+    #     q = defaultdict(lambda: defaultdict(lambda: 0.0))
+    #     for s in self.C_sas.keys():
+    #         for a in self.C_sas[s].keys():
+    #             for sp in self.C_sas[s][a].keys():
+    #                 q[s][a] += self.get_transition(s, a, sp) * (self.get_reward(s, a, sp) + self.gamma * self.V[s])
+    #     self.Q = q
 
     def reset(self):
         self.u_count = self.init_urate
@@ -103,7 +124,7 @@ class RMAXAgent(AgentBasisClass):
         self.Q = defaultdict(lambda: defaultdict(lambda: self.rmax))
         self.C_sa = defaultdict(lambda: defaultdict(lambda: 0))
         self.C_sas = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-        self.r_sum = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0.0)))
+        self.rewards = defaultdict(lambda: defaultdict(list))
 
     def _get_max_q_key(self, state):
         return self._get_max_q(state)[0]
@@ -112,8 +133,8 @@ class RMAXAgent(AgentBasisClass):
         return self._get_max_q(state)[1]
 
     def _get_max_q(self, state):
-        best_action = random.choice(self.actions)
-        actions = self.actions[:]
+        best_action = random.choice(self.actions[state])
+        actions = self.actions[state][:]
         np.random.shuffle(actions)
         max_q_val = float("-inf")
         for key in actions:
@@ -122,3 +143,9 @@ class RMAXAgent(AgentBasisClass):
                 best_action = key
                 max_q_val = q_val
         return best_action, max_q_val
+
+    def q_to_csv(self, filename=None):
+        if filename is None:
+            filename = "qtable_{0}.csv".format(self.name)
+        table = pd.DataFrame(self.Q)
+        table.to_csv(filename)
