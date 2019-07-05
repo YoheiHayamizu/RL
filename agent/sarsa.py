@@ -1,6 +1,7 @@
 from agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
+import pandas as pd
 import random
 
 
@@ -43,7 +44,7 @@ class SarsaAgent(AgentBasisClass):
         elif self.explore == "softmax":
             action = self._soft_max_policy(state)
         elif self.explore == "random":
-            action = np.random.choice(self.actions)
+            action = np.random.choice(self.actions[state])
         else:
             action = self._epsilon_greedy_policy(state)  # default
 
@@ -79,8 +80,8 @@ class SarsaAgent(AgentBasisClass):
         return self._get_max_q(state)[1]
 
     def _get_max_q(self, state):
-        best_action = random.choice(self.actions)
-        actions = self.actions[:]
+        best_action = random.choice(self.actions[state])
+        actions = self.actions[state][:]
         np.random.shuffle(actions)
         max_q_val = float("-inf")
         for key in actions:
@@ -95,7 +96,13 @@ class SarsaAgent(AgentBasisClass):
 
     def _epsilon_greedy_policy(self, state):
         if self.epsilon > random.random():
-            action = random.choice(self.actions)
+            action = random.choice(self.actions[state])
         else:
             action = self._get_max_q_key(state)
         return action
+
+    def q_to_csv(self, filename=None):
+        if filename is None:
+            filename = "qtable_{0}.csv".format(self.name)
+        table = pd.DataFrame(self.Q)
+        table.to_csv(filename)
