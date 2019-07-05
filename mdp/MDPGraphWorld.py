@@ -6,21 +6,21 @@ import networkx as nx
 
 
 class MDPGraphWorld(MDPBasisClass):
-    def __init__(self, node_num=15,
+    def __init__(self, node_num=15, init_node=0,
                  goal_nodes=goal_nodes_tuple, has_door_nodes=has_door_nodes_tuple,
-                 is_goal_terminal=True, failure_prob=failure_prob_dict1, step_cost=1.0, name="Graphworld"
+                 is_goal_terminal=True, success_rate=success_rate_dict1, step_cost=1.0, name="Graphworld"
                  ):
         self.actions = ACTIONS
         self.node_num = node_num
         self.is_goal_terminal = is_goal_terminal
-        self.failure_prob = failure_prob
+        self.success_rate = success_rate
         self.goal_nodes = goal_nodes
         self.has_door_nodes = has_door_nodes
         self.step_cost = step_cost
         self.name = name
         self.nodes = self.set_nodes()
-        self.init_state = self.nodes[0]
-        self.cur_state = self.nodes[0]
+        self.init_state = self.nodes[init_node]
+        self.cur_state = self.nodes[init_node]
         self.G = self.set_graph()
         super().__init__(self.init_state, self.actions, self._transition_func, self._reward_func,
                          self.step_cost)
@@ -41,7 +41,7 @@ class MDPGraphWorld(MDPBasisClass):
         get_params["has_door_nodes"] = self.has_door_nodes
         get_params["cur_state"] = self.cur_state
         get_params["is_goal_terminal"] = self.is_goal_terminal
-        get_params["failure_prob"] = self.failure_prob
+        get_params["success_rate"] = self.success_rate
         return get_params
 
     def get_neighbor(self, node):
@@ -52,19 +52,25 @@ class MDPGraphWorld(MDPBasisClass):
         neighbor = self.get_neighbor(self.cur_state)
         neighbor_id = [node.id for node in neighbor]
         for a in ACTIONS:
-            if a in ["goto", "approach"]:
+            if a == "goto":
                 for n in neighbor_id:
-                    actions.append((a, n))
+                    if not self.nodes[n].has_door():
+                        actions.append((a, n))
+            elif a == "approach":
+                for n in neighbor_id:
+                    if self.nodes[n].has_door():
+                        actions.append((a, n))
             else:
-                actions.append((a, self.cur_state.id))
+                if self.cur_state.has_door():
+                    actions.append((a, self.cur_state.id))
         return actions
 
     # Setter
 
     def set_nodes(self):
         nodes = [MDPGraphWorldNode(i, is_terminal=False) for i in range(self.node_num)]
-        for i in self.failure_prob:
-            nodes[i].set_slip_prob(self.failure_prob[i])
+        for i in self.success_rate:
+            nodes[i].set_slip_prob(self.success_rate[i])
         for i in self.has_door_nodes:
             nodes[i].set_door(True)
 
@@ -92,6 +98,7 @@ class MDPGraphWorld(MDPBasisClass):
                       node[13]: [node[12], node[14]],
                       node[14]: [node[1], node[12], node[13]]}
         G = nx.Graph(graph_dist)
+        nx.set_node_attributes(G, 0, "count")
         return G
 
     # Core
@@ -103,14 +110,15 @@ class MDPGraphWorld(MDPBasisClass):
         :param action: <tuple <str, id>> action discription and node id
         :return: next_state <State>
         """
+        self.G.nodes[state]['count'] += 1
 
         if state.is_terminal():
             return state
 
-        if state.failure_prob > random.random() and action[0] == "gothrough":
-            action = random.choice([("wait", n) for n in [node.id for node in self.get_neighbor(state)]])
+        if state.success_rate < random.random() and action[0] == "gothrough":
+            action = ("wait", action[1])
 
-        if action[0] not in ACTIONS:
+        if action[0] not in self.actions:
             print("the action is not defined in transition function")
             next_state = state
         elif action[0] == "goto" and self.nodes[action[1]] in self.get_neighbor(state):
@@ -119,7 +127,7 @@ class MDPGraphWorld(MDPBasisClass):
             next_state = self.nodes[action[1]]
         elif action[0] == "opendoor" and self.nodes[action[1]] in self.get_neighbor(state) and state.has_door():
             next_state = self.nodes[action[1]]
-        elif action[0] == "gothrough" and self.nodes[action[1]] in self.get_neighbor(state):
+        elif action[0] == "gothrough" and self.nodes[action[1]] in self.get_neighbor(state) and state.has_door():
             next_state = self.nodes[action[1]]
         else:
             next_state = state
@@ -140,25 +148,33 @@ class MDPGraphWorld(MDPBasisClass):
             return 0 - self.step_cost
 
     def print_graph(self):
-        nx.draw(self.G)
+        import matplotlib.pyplot as plt
+        pos = nx.spring_layout(self.G)
+        nx.draw_networkx_nodes(self.G, pos, alpha=0.9, node_size=500)
+        nodelist = [self.nodes[0], self.nodes[10]]
+        nx.draw_networkx_nodes(self.G, pos, nodelist=nodelist, node_color='r', alpha=0.9,
+                               node_size=500)
+        nx.draw_networkx_labels(self.G, pos)
+        nx.draw_networkx_edges(self.G, pos)
+        plt.show()
 
 
 class MDPGraphWorldNode(MDPStateClass):
-    def __init__(self, id, is_terminal=False, has_door=False, failure_prob=0.0):
+    def __init__(self, id, is_terminal=False, has_door=False, success_rate=0.0):
         """
         A state in MDP
         :param id: <str>
         :param is_terminal: <bool>
         :param has_door: <bool>
-        :param failure_prob: <float>
+        :param success_rate: <float>
         """
         self.id = id
-        self.failure_prob = failure_prob
+        self.success_rate = success_rate
         self._has_door = has_door
-        super().__init__(data=(self.id, self.failure_prob, self._has_door), is_terminal=is_terminal)
+        super().__init__(data=self.id, is_terminal=is_terminal)
 
     def __hash__(self):
-        return hash(tuple(self.data))
+        return hash(self.data)
 
     def __str__(self):
         return "s{0}".format(self.id)
@@ -171,13 +187,13 @@ class MDPGraphWorldNode(MDPStateClass):
         return self.id == other.id
 
     def get_slip_prob(self):
-        return self.failure_prob
+        return self.success_rate
 
     def set_slip_prob(self, new_slip_prob):
-        self.failure_prob = new_slip_prob
+        self.success_rate = new_slip_prob
 
     def has_door(self):
-        return self.failure_prob
+        return self._has_door
 
     def set_door(self, has_door):
         self._has_door = has_door
@@ -187,11 +203,13 @@ if __name__ == "__main__":
     Graph_world = MDPGraphWorld()
     Graph_world.reset()
     observation = Graph_world
-    print(Graph_world.get_actions())
-    for t in range(100):
+    # Graph_world.print_graph()
+    for t in range(50):
+        # print(Graph_world.get_actions())
         random_action = (random.choice(Graph_world.get_actions()))
-        print(observation.get_cur_state(), random_action)
+        print(observation.get_cur_state(), random_action, end=" ")
         observation, reward, done, info = Graph_world.step(random_action)
+        print(observation.get_params())
         if done:
             print("Goal!")
-            exit()
+            break
