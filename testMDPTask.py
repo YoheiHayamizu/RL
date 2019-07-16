@@ -1,12 +1,12 @@
-from mdp.MDPGridWorld import MDPGridWorld
-import mdp.GridWorldConstants as GridConstant
-from mdp.MDPGraphWorld import MDPGraphWorld
-import mdp.GraphWorldConstants as GraphConstant
+from RL.mdp.MDPGridWorld import MDPGridWorld
+import RL.mdp.GridWorldConstants as GridConstant
+from RL.mdp.MDPGraphWorld import MDPGraphWorld
+import RL.mdp.GraphWorldConstants as GraphConstant
 
-from agent.qlearning import QLearningAgent
-from agent.sarsa import SarsaAgent
-from agent.rmax import RMAXAgent
-from testConstants import *
+from RL.agent.qlearning import QLearningAgent
+from RL.agent.sarsa import SarsaAgent
+from RL.agent.rmax import RMAXAgent
+from RL.testConstants import *
 
 import time
 import numpy as np
