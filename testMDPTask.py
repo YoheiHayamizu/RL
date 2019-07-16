@@ -54,6 +54,8 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     ax.set_xticks(range(len(time_plot["method"])))
     plt.savefig(FIG_DIR + "runtime_{0}.png".format(mdp.name))
 
+
+
     # q table to csv
     for method in methods:
         method.q_to_csv(FIG_DIR + "qtable_{0}.csv".format(method.name))
@@ -103,7 +105,6 @@ def episode_data_to_df(_dict, method, seed):
     plot_df.loc[:, "method"] = str(method)
     return plot_df
 
-
 if __name__ == "__main__":
     np.random.seed(0)
     grid_world = MDPGridWorld(5, 5,
@@ -111,7 +112,8 @@ if __name__ == "__main__":
                               is_goal_terminal=True, is_rand_init=False,
                               slip_prob=0.0, step_cost=1.0, hole_cost=1.0,
                               name="gridworld")
-    graph_world = MDPGraphWorld(node_num=15, is_goal_terminal=True, step_cost=1.0, success_rate=GraphConstant.success_rate_dict2)
+    graph_world = MDPGraphWorld(node_num=15, is_goal_terminal=True, step_cost=1.0,
+                                success_rate=GraphConstant.success_rate_dict2)
 
     # mdp = grid_world
     mdp = graph_world
@@ -124,6 +126,6 @@ if __name__ == "__main__":
     # methods = [qLearning, sarsa]
     # methods = [rmax]
 
-    run_experiment(mdp, methods, step=100, seed=10, episode=500)
+    run_experiment(mdp, methods, step=50, seed=10, episode=100)
 
 
