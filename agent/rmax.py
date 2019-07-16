@@ -1,4 +1,4 @@
-from agent.AgentBasis import AgentBasisClass
+from RL.agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
 import pandas as pd

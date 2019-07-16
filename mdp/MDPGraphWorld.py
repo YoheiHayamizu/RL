@@ -1,6 +1,6 @@
-from mdp.MDPBasis import MDPBasisClass
-from mdp.MDPState import MDPStateClass
-from mdp.GraphWorldConstants import *
+from RL.mdp.MDPBasis import MDPBasisClass
+from RL.mdp.MDPState import MDPStateClass
+from RL.mdp.GraphWorldConstants import *
 import random
 import networkx as nx
 
