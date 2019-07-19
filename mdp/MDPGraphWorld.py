@@ -158,8 +158,9 @@ class MDPGraphWorld(MDPBasisClass):
         nx.draw_networkx_edges(self.G, pos)
         plt.show()
 
-    def save_graph(self, filename):
+    def save_graph_fig(self, filename="graph.png"):
         import matplotlib.pyplot as plt
+        fix, ax = plt.subplots()
         pos = nx.spring_layout(self.G)
         nx.draw_networkx_nodes(self.G, pos, alpha=0.9, node_size=500)
         nodelist = [self.nodes[0], self.nodes[10]]
@@ -168,6 +169,11 @@ class MDPGraphWorld(MDPBasisClass):
         nx.draw_networkx_labels(self.G, pos)
         nx.draw_networkx_edges(self.G, pos)
         plt.savefig(filename)
+        del plt
+
+    def save_graph(self, filename="graph.p"):
+        with open(filename, "wb") as f:
+            nx.write_gpickle(self.G, f)
 
 
 class MDPGraphWorldNode(MDPStateClass):
