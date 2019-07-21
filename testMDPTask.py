@@ -53,8 +53,8 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     ax.set_title('Run Time by methods')
     ax.set_xticks(range(len(time_plot["method"])))
     plt.savefig(FIG_DIR + "runtime_{0}.png".format(mdp.name))
-
-
+    del fig
+    del ax
 
     # q table to csv
     for method in methods:
@@ -105,6 +105,7 @@ def episode_data_to_df(_dict, method, seed):
     plot_df.loc[:, "method"] = str(method)
     return plot_df
 
+
 if __name__ == "__main__":
     np.random.seed(0)
     grid_world = MDPGridWorld(5, 5,
@@ -118,7 +119,8 @@ if __name__ == "__main__":
     # mdp = grid_world
     mdp = graph_world
 
-    qLearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=0.1, gamma=0.99, epsilon=0.1, explore="uniform")
+    qLearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=0.1, gamma=0.99, epsilon=0.1,
+                               explore="uniform")
     sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=0.1, gamma=0.99, epsilon=0.1, explore="uniform")
     rmax = RMAXAgent(mdp.get_actions(), "RMAX", rmax=10.0, u_count=2, gamma=0.95, epsilon_one=0.99)
 
@@ -128,4 +130,5 @@ if __name__ == "__main__":
 
     run_experiment(mdp, methods, step=50, seed=10, episode=100)
 
-
+    mdp.save_graph_fig(FIG_DIR+"graph.png")
+    mdp.save_graph(FIG_DIR+"graph.p")
