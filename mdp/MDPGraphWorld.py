@@ -7,7 +7,10 @@ import networkx as nx
 
 class MDPGraphWorld(MDPBasisClass):
     def __init__(self, node_num=15, init_node=0,
-                 goal_nodes=goal_nodes_tuple, has_door_nodes=has_door_nodes_tuple,
+                 goal_nodes=goal_nodes_tuple,
+                 has_door_nodes=has_door_nodes_tuple,
+                 door_open_nodes=door_open_nodes_dict,
+                 door_id=door_id_dict,
                  is_goal_terminal=True, success_rate=success_rate_dict1, step_cost=1.0, name="Graphworld"
                  ):
         self.actions = ACTIONS
@@ -16,6 +19,8 @@ class MDPGraphWorld(MDPBasisClass):
         self.success_rate = success_rate
         self.goal_nodes = goal_nodes
         self.has_door_nodes = has_door_nodes
+        self.door_open_nodes = door_open_nodes
+        self.door_id = door_id
         self.step_cost = step_cost
         self.name = name
         self.nodes = self.set_nodes()
@@ -72,7 +77,7 @@ class MDPGraphWorld(MDPBasisClass):
         for i in self.success_rate:
             nodes[i].set_slip_prob(self.success_rate[i])
         for i in self.has_door_nodes:
-            nodes[i].set_door(True)
+            nodes[i].set_door(True, self.door_id[i], self.door_open_nodes[i])
 
         if self.is_goal_terminal:
             for i in self.goal_nodes:
@@ -112,25 +117,34 @@ class MDPGraphWorld(MDPBasisClass):
         """
         self.G.nodes[state]['count'] += 1
 
+        # print(self.get_neighbor(state))
+
         if state.is_terminal():
             return state
 
         if state.success_rate < random.random() and action[0] == "gothrough":
-            action = ("wait", action[1])
+            action = ("fail", action[1])
 
-        if action[0] not in self.actions:
-            print("the action is not defined in transition function")
-            next_state = state
-        elif action[0] == "goto" and self.nodes[action[1]] in self.get_neighbor(state):
+        next_state = state
+
+        if action[0] == "opendoor" and state.has_door() and not state.door_open():
+            state.set_door(state.has_door(), state.get_door_id(), True)
             next_state = self.nodes[action[1]]
-        elif action[0] == "approach" and self.nodes[action[1]] in self.get_neighbor(state):
+        elif action[0] == "gothrough" and state.has_door() and state.door_open():
+            for node in self.get_neighbor(state):
+                if node.get_door_id() == state.get_door_id():
+                    next_state = node
+        elif action[0] == "approach":
             next_state = self.nodes[action[1]]
-        elif action[0] == "opendoor" and self.nodes[action[1]] in self.get_neighbor(state) and state.has_door():
-            next_state = self.nodes[action[1]]
-        elif action[0] == "gothrough" and self.nodes[action[1]] in self.get_neighbor(state) and state.has_door():
+            if next_state.get_door_id() == state.get_door_id():
+                next_state = state
+        elif action[0] == "goto":
             next_state = self.nodes[action[1]]
         else:
             next_state = state
+            action = ("fail", action[1])
+
+        # print(action)
 
         return next_state
 
@@ -171,7 +185,7 @@ class MDPGraphWorld(MDPBasisClass):
 
 
 class MDPGraphWorldNode(MDPStateClass):
-    def __init__(self, id, is_terminal=False, has_door=False, success_rate=0.0):
+    def __init__(self, id, is_terminal=False, has_door=False, door_id=None, door_open=False, success_rate=0.0):
         """
         A state in MDP
         :param id: <str>
@@ -182,6 +196,8 @@ class MDPGraphWorldNode(MDPStateClass):
         self.id = id
         self.success_rate = success_rate
         self._has_door = has_door
+        self._door_open = door_open
+        self._door_id = door_id
         super().__init__(data=self.id, is_terminal=is_terminal)
 
     def __hash__(self):
@@ -197,8 +213,20 @@ class MDPGraphWorldNode(MDPStateClass):
         assert isinstance(other, MDPGraphWorldNode), "Arg object is not in" + type(self).__module__
         return self.id == other.id
 
+    def get_param(self):
+        params_dict = dict()
+        params_dict["id"] = self.id
+        params_dict["success_rate"] = self.success_rate
+        params_dict["has_door"] = self._has_door
+        params_dict["door_open"] = self._door_open
+        params_dict["door_id"] = self._door_id
+        return params_dict
+
     def get_slip_prob(self):
         return self.success_rate
+
+    def get_door_id(self):
+        return self._door_id
 
     def set_slip_prob(self, new_slip_prob):
         self.success_rate = new_slip_prob
@@ -206,8 +234,13 @@ class MDPGraphWorldNode(MDPStateClass):
     def has_door(self):
         return self._has_door
 
-    def set_door(self, has_door):
+    def door_open(self):
+        return self._door_open
+
+    def set_door(self, has_door, door_id, door_open):
         self._has_door = has_door
+        self._door_id = door_id
+        self._door_open = door_open
 
 
 if __name__ == "__main__":
