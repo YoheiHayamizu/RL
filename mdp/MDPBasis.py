@@ -30,7 +30,7 @@ class MDPBasisClass(object):
     def get_cur_state(self):
         return self.cur_state
 
-    def get_actions(self):
+    def get_actions(self, state):
         return self.actions
 
     def get_transition_func(self):
