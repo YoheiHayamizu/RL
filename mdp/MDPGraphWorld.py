@@ -2,6 +2,7 @@ from RL.mdp.MDPBasis import MDPBasisClass
 from RL.mdp.MDPState import MDPStateClass
 from RL.mdp.GraphWorldConstants import *
 import random
+from collections import defaultdict
 import networkx as nx
 
 
@@ -13,7 +14,6 @@ class MDPGraphWorld(MDPBasisClass):
                  door_id=door_id_dict,
                  is_goal_terminal=True, success_rate=success_rate_dict1, step_cost=1.0, name="Graphworld"
                  ):
-        self.actions = ACTIONS
         self.node_num = node_num
         self.is_goal_terminal = is_goal_terminal
         self.success_rate = success_rate
@@ -27,6 +27,7 @@ class MDPGraphWorld(MDPBasisClass):
         self.init_state = self.nodes[init_node]
         self.cur_state = self.nodes[init_node]
         self.G = self.set_graph()
+        self.init_actions()
         super().__init__(self.init_state, self.actions, self._transition_func, self._reward_func,
                          self.step_cost)
 
@@ -52,25 +53,30 @@ class MDPGraphWorld(MDPBasisClass):
     def get_neighbor(self, node):
         return list(self.G[node])
 
-    def get_actions(self):
-        actions = list()
-        neighbor = self.get_neighbor(self.cur_state)
-        neighbor_id = [node.id for node in neighbor]
-        for a in ACTIONS:
-            if a == "goto":
-                for n in neighbor_id:
-                    if not self.nodes[n].has_door():
-                        actions.append((a, n))
-            elif a == "approach":
-                for n in neighbor_id:
-                    if self.nodes[n].has_door():
-                        actions.append((a, n))
-            else:
-                if self.cur_state.has_door():
-                    actions.append((a, self.cur_state.id))
-        return actions
+    def get_actions(self, state=None):
+        if state is None:
+            return self.actions
+        return self.actions[state]
 
     # Setter
+
+    def init_actions(self):
+        self.actions = defaultdict(lambda: list())
+        for node in self.nodes:
+            neighbor = self.get_neighbor(node)
+            neighbor_id = [node.id for node in neighbor]
+            for a in ACTIONS:
+                if a == "goto":
+                    for n in neighbor_id:
+                        if not self.nodes[n].has_door():
+                            self.actions[node].append((a, n))
+                elif a == "approach":
+                    for n in neighbor_id:
+                        if self.nodes[n].has_door():
+                            self.actions[node].append((a, n))
+                else:
+                    if node.has_door():
+                        self.actions[node].append((a, node.id))
 
     def set_nodes(self):
         nodes = [MDPGraphWorldNode(i, is_terminal=False) for i in range(self.node_num)]
@@ -256,7 +262,7 @@ if __name__ == "__main__":
     # Graph_world.print_graph()
     for t in range(50):
         # print(Graph_world.get_actions())
-        random_action = (random.choice(Graph_world.get_actions()))
+        random_action = (random.choice(Graph_world.get_actions(observation.get_cur_state())))
         print(observation.get_cur_state(), random_action, end=" ")
         observation, reward, done, info = Graph_world.step(random_action)
         print(observation.get_params())
