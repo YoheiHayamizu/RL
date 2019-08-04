@@ -48,6 +48,7 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     time_plot = pd.DataFrame(time_dict.items(), columns=["method", "time"])
     fig, ax = plt.subplots()
     ax.bar(time_plot["method"], time_plot["time"], width=0.2)
+
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Run Time[s]')
     ax.set_title('Run Time by methods')
@@ -59,6 +60,7 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     # q table to csv
     for method in methods:
         method.q_to_csv(FIG_DIR + "qtable_{0}.csv".format(method.name))
+        agent_to_pickle(method, FIG_DIR + "{0}.pkl".format(method.name))
 
 
 def run_episodes(mdp, method, step=50, episode=100):
@@ -70,15 +72,10 @@ def run_episodes(mdp, method, step=50, episode=100):
         state = mdp.get_cur_state()
         action = method.act(state)
         for t in range(1, step):
-            method.set_actions(state, mdp.get_actions())
-            # print(method.actions[state])
             mdp, reward, done, info = mdp.step(action)
             state = mdp.get_cur_state()
             action = method.act(state)
             method.update(state, action, reward)
-            # print(method.Q[state], reward)
-            # print(mdp.get_cur_state(), action)
-            # print(method.Q)
             if done:
                 break
         step_list.append(method.step_number)
@@ -106,6 +103,20 @@ def episode_data_to_df(_dict, method, seed):
     return plot_df
 
 
+def agent_to_pickle(method, filename=None):
+    import dill
+    if filename is None:
+        filename = "{0}.pkl".format(method.name)
+    with open(filename, "wb") as f:
+        dill.dump(method, f)
+
+
+def load_agent(filename):
+    import dill
+    with open(filename, "rb") as f:
+        return dill.load(f)
+
+
 if __name__ == "__main__":
     np.random.seed(0)
     grid_world = MDPGridWorld(5, 5,
@@ -122,7 +133,7 @@ if __name__ == "__main__":
     qLearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=0.1, gamma=0.99, epsilon=0.1,
                                explore="uniform")
     sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=0.1, gamma=0.99, epsilon=0.1, explore="uniform")
-    rmax = RMAXAgent(mdp.get_actions(), "RMAX", rmax=10.0, u_count=2, gamma=0.95, epsilon_one=0.99)
+    rmax = RMAXAgent(mdp.get_actions(), "RMAX", rmax=1.0, u_count=2, gamma=0.95, epsilon_one=0.99)
 
     methods = [qLearning, sarsa, rmax]
     # methods = [qLearning, sarsa]
@@ -130,5 +141,5 @@ if __name__ == "__main__":
 
     run_experiment(mdp, methods, step=50, seed=10, episode=100)
 
-    mdp.save_graph_fig(FIG_DIR+"graph.png")
-    mdp.save_graph(FIG_DIR+"graph.p")
+    mdp.save_graph_fig(FIG_DIR + "graph.png")
+    mdp.save_graph(FIG_DIR + "graph.p")
