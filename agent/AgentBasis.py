@@ -1,10 +1,9 @@
-from collections import defaultdict
 
 
 class AgentBasisClass:
     def __init__(self, name, actions, gamma=0.99):
         self.name = name
-        self.actions = defaultdict(lambda: actions)
+        self.actions = actions
         self.init_actions = self.actions
         self.gamma = gamma
         self.episode_number = 0

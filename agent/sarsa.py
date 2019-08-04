@@ -104,5 +104,5 @@ class SarsaAgent(AgentBasisClass):
     def q_to_csv(self, filename=None):
         if filename is None:
             filename = "qtable_{0}.csv".format(self.name)
-        table = pd.DataFrame(self.Q)
+        table = pd.DataFrame(self.Q, dtype=str)
         table.to_csv(filename)
