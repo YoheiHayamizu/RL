@@ -2,6 +2,7 @@ from RL.mdp.MDPBasis import MDPBasisClass
 from RL.mdp.MDPState import MDPStateClass
 from RL.mdp.GraphWorldConstants import *
 import random
+import copy
 from collections import defaultdict
 import networkx as nx
 
@@ -23,9 +24,11 @@ class MDPGraphWorld(MDPBasisClass):
         self.door_id = door_id
         self.step_cost = step_cost
         self.name = name
-        self.nodes = self.set_nodes()
-        self.init_state = self.nodes[init_node]
-        self.cur_state = self.nodes[init_node]
+        self.init_node = init_node
+        self.nodes = [MDPGraphWorldNode(i, is_terminal=False) for i in range(self.node_num)]
+        self.set_nodes()
+        self.init_state = self.nodes[self.init_node]
+        self.cur_state = self.nodes[self.init_node]
         self.G = self.set_graph()
         self.init_actions()
         super().__init__(self.init_state, self.actions, self._transition_func, self._reward_func,
@@ -58,38 +61,50 @@ class MDPGraphWorld(MDPBasisClass):
             return self.actions
         return self.actions[state]
 
+    def get_nodes(self):
+        nodes = dict()
+        for node in self.nodes:
+            nodes[str(node)] = node
+        return nodes
+
     # Setter
 
     def init_actions(self):
-        self.actions = defaultdict(lambda: list())
+        self.actions = defaultdict(lambda: set())
         for node in self.nodes:
             neighbor = self.get_neighbor(node)
             neighbor_id = [node.id for node in neighbor]
             for a in ACTIONS:
                 if a == "goto":
-                    for n in neighbor_id:
+                    for n in neighbor_id + [node.id]:
                         if not self.nodes[n].has_door():
-                            self.actions[node].append((a, n))
+                            self.actions[node.get_state()].add((a, n))
+                            node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+                            self.actions[node.get_state()].add((a, n))
                 elif a == "approach":
-                    for n in neighbor_id:
+                    for n in neighbor_id + [node.id]:
                         if self.nodes[n].has_door():
-                            self.actions[node].append((a, n))
+                            self.actions[node.get_state()].add((a, n))
+                            node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+                            self.actions[node.get_state()].add((a, n))
                 else:
                     if node.has_door():
-                        self.actions[node].append((a, node.id))
+                        self.actions[node.get_state()].add((a, node.id))
+                        node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+                        self.actions[node.get_state()].add((a, node.id))
+        self.set_nodes()
+        # for s, a in self.actions.items():
+        #     print(s, a)
 
     def set_nodes(self):
-        nodes = [MDPGraphWorldNode(i, is_terminal=False) for i in range(self.node_num)]
         for i in self.success_rate:
-            nodes[i].set_slip_prob(self.success_rate[i])
+            self.nodes[i].set_slip_prob(self.success_rate[i])
         for i in self.has_door_nodes:
-            nodes[i].set_door(True, self.door_id[i], self.door_open_nodes[i])
+            self.nodes[i].set_door(True, self.door_id[i], self.door_open_nodes[i])
 
         if self.is_goal_terminal:
             for i in self.goal_nodes:
-                nodes[i].set_terminal(True)
-
-        return nodes
+                self.nodes[i].set_terminal(True)
 
     def set_graph(self):
         node = self.nodes
@@ -134,12 +149,13 @@ class MDPGraphWorld(MDPBasisClass):
         next_state = state
 
         if action[0] == "opendoor" and state.has_door() and not state.door_open():
-            state.set_door(state.has_door(), state.get_door_id(), True)
+            state.set_door(state.has_door(), state.get_door_id(), True)  # TODO: ドアを開けたら対応するドアも開けるようにする
             next_state = self.nodes[action[1]]
         elif action[0] == "gothrough" and state.has_door() and state.door_open():
             for node in self.get_neighbor(state):
                 if node.get_door_id() == state.get_door_id():
                     next_state = node
+            next_state.set_door(state.has_door(), state.get_door_id(), True)
         elif action[0] == "approach":
             next_state = self.nodes[action[1]]
             if next_state.get_door_id() == state.get_door_id():
@@ -166,6 +182,11 @@ class MDPGraphWorld(MDPBasisClass):
             return 10 - self.step_cost
         else:
             return 0 - self.step_cost
+
+    def reset(self):
+        super().reset()
+        self.set_nodes()
+
 
     def print_graph(self):
         import matplotlib.pyplot as plt
@@ -239,6 +260,15 @@ class MDPGraphWorldNode(MDPStateClass):
 
     def get_door_id(self):
         return self._door_id
+
+    def get_state(self):
+        if self.has_door():
+            if self.door_open():
+                return "s{0}_d{1}_True".format(self.id, self._door_id)
+            else:
+                return "s{0}_d{1}_False".format(self.id, self._door_id)
+        else:
+            return "s{0}".format(self.id)
 
     def set_slip_prob(self, new_slip_prob):
         self.success_rate = new_slip_prob

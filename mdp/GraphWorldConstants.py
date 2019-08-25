@@ -6,10 +6,10 @@ MAP = [""]
 goal_nodes_tuple = (10,)
 has_door_nodes_tuple = (1, 2, 4, 5, 6, 8, 9, 11, 12, 14,)
 door_open_nodes_dict = {i: False for i in has_door_nodes_tuple}
-door_id_dict = {1: 4, 14: 4,
+door_id_dict = {1: 2, 14: 2,
                 2: 0, 5: 0,
                 4: 1, 6: 1,
-                8: 2, 9: 2,
+                8: 4, 9: 4,
                 11: 3, 12: 3}
 
 success_rate_dict1 = {0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0,
