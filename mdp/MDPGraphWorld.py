@@ -186,6 +186,7 @@ class MDPGraphWorld(MDPBasisClass):
     def reset(self):
         super().reset()
         self.set_nodes()
+        self.set_graph()
 
 
     def print_graph(self):
