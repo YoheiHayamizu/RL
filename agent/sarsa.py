@@ -40,13 +40,13 @@ class SarsaAgent(AgentBasisClass):
 
     def act(self, state):
         if self.explore == "uniform":
-            action = self._epsilon_greedy_policy(state)
+            action = self._epsilon_greedy_policy(state.get_state())
         elif self.explore == "softmax":
-            action = self._soft_max_policy(state)
+            action = self._soft_max_policy(state.get_state())
         elif self.explore == "random":
-            action = np.random.choice(self.actions[state])
+            action = np.random.choice(self.actions[state.get_state()])
         else:
-            action = self._epsilon_greedy_policy(state)  # default
+            action = self._epsilon_greedy_policy(state.get_state())  # default
 
         self.step_number += 1
 
@@ -80,8 +80,9 @@ class SarsaAgent(AgentBasisClass):
         return self._get_max_q(state)[1]
 
     def _get_max_q(self, state):
-        best_action = random.choice(self.actions[state])
-        actions = self.actions[state][:]
+        tmp = list(self.actions[state])
+        best_action = random.choice(tmp)
+        actions = tmp[:]
         np.random.shuffle(actions)
         max_q_val = float("-inf")
         for key in actions:

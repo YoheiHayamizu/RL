@@ -60,7 +60,7 @@ class RMAXAgent(AgentBasisClass):
     # Core
 
     def act(self, state):
-        action = self._get_max_q_key(state)
+        action = self._get_max_q_key(state.get_state())
 
         self.step_number += 1
 
@@ -72,18 +72,18 @@ class RMAXAgent(AgentBasisClass):
 
         if learning:
             if pre_state is None and pre_action is None:
-                self.set_pre_state(state)
+                self.set_pre_state(state.get_state())
                 self.set_pre_action(action)
                 return
 
             self.C_sa[pre_state][pre_action] += 1
-            self.C_sas[pre_state][pre_action][state] += 1
+            self.C_sas[pre_state][pre_action][state.get_state()] += 1
             self.rewards[pre_state][pre_action] += [reward]
             if self.get_count(pre_state, pre_action) <= self.u_count:
                 if self.u_count == self.get_count(pre_state, pre_action):
                     self._update_policy_iteration()
 
-        self.set_pre_state(state)
+        self.set_pre_state(state.get_state())
         self.set_pre_action(action)
 
     def _update_policy_iteration(self):
@@ -95,27 +95,6 @@ class RMAXAgent(AgentBasisClass):
                         self.Q[s][a] = self.get_reward(s, a) + self.gamma * \
                                        sum([(self.get_transition(s, a, sp) * self._get_max_q_val(sp))
                                             for sp in self.Q.keys()])
-
-    # def _update_policy_iteration(self, tolerance=1e-6):
-    #     dv = tolerance
-    #     v = defaultdict(lambda: 0.0)
-    #     while dv >= tolerance:
-    #         dv = 0.0
-    #         vi = v
-    #         for s in self.C_sas.keys():
-    #             for a in self.C_sas[s].keys():
-    #                 for sp in self.C_sas[s][a].keys():
-    #                     self.V[s] += self.get_transition(s, a, sp) * (self.get_reward(s, a, sp) + self.gamma * v[s])
-    #             if abs(v[s] - vi[s]) > dv:
-    #                 dv = abs(v[s] - vi[s])
-    #     self.V = v
-    #
-    #     q = defaultdict(lambda: defaultdict(lambda: 0.0))
-    #     for s in self.C_sas.keys():
-    #         for a in self.C_sas[s].keys():
-    #             for sp in self.C_sas[s][a].keys():
-    #                 q[s][a] += self.get_transition(s, a, sp) * (self.get_reward(s, a, sp) + self.gamma * self.V[s])
-    #     self.Q = q
 
     def reset(self):
         self.u_count = self.init_urate
@@ -133,8 +112,9 @@ class RMAXAgent(AgentBasisClass):
         return self._get_max_q(state)[1]
 
     def _get_max_q(self, state):
-        best_action = random.choice(self.actions[state])
-        actions = self.actions[state][:]
+        tmp = list(self.actions[state])
+        best_action = random.choice(tmp)
+        actions = tmp[:]
         np.random.shuffle(actions)
         max_q_val = float("-inf")
         for key in actions:
