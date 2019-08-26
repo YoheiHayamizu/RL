@@ -2,7 +2,6 @@ from RL.mdp.MDPBasis import MDPBasisClass
 from RL.mdp.MDPState import MDPStateClass
 from RL.mdp.GraphWorldConstants import *
 import random
-import copy
 from collections import defaultdict
 import networkx as nx
 
@@ -293,10 +292,12 @@ if __name__ == "__main__":
     # Graph_world.print_graph()
     for t in range(50):
         # print(Graph_world.get_actions())
-        random_action = (random.choice(Graph_world.get_actions(observation.get_cur_state())))
-        print(observation.get_cur_state(), random_action, end=" ")
+        print(observation.get_cur_state().get_state())
+        print(Graph_world.get_actions(observation.get_cur_state().get_state()))
+        random_action = (random.choice(list(Graph_world.get_actions(observation.get_cur_state().get_state()))))
+        # print(observation.get_cur_state(), random_action, end=" ")
         observation, reward, done, info = Graph_world.step(random_action)
-        print(observation.get_params())
+        # print(observation.get_params())
         if done:
             print("Goal!")
             break
