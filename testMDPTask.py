@@ -43,17 +43,18 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
         for s in step_plot[m].keys():
             step_plot_df = step_plot_df.append(episode_data_to_df(step_plot, m, s))
     save_figure(step_plot_df, FIG_DIR + "converge_{0}.png".format(mdp.name))
+    step_plot_df.to_csv(FIG_DIR + "converge_{0}.csv".format(mdp.name))
 
     # plot and save run time
     time_plot = pd.DataFrame(time_dict.items(), columns=["method", "time"])
     fig, ax = plt.subplots()
     ax.bar(time_plot["method"], time_plot["time"], width=0.2)
-
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Run Time[s]')
     ax.set_title('Run Time by methods')
     ax.set_xticks(range(len(time_plot["method"])))
     plt.savefig(FIG_DIR + "runtime_{0}.png".format(mdp.name))
+    time_plot.to_csv(FIG_DIR + "runtime_{0}.csv".format(mdp.name))
     del fig
     del ax
 
