@@ -39,13 +39,13 @@ class QLearningAgent(AgentBasisClass):
 
     def act(self, state):
         if self.explore == "uniform":
-            action = self._epsilon_greedy_policy(state.get_state())
+            action = self._epsilon_greedy_policy(state)
         elif self.explore == "softmax":
-            action = self._soft_max_policy(state.get_state())
+            action = self._soft_max_policy(state)
         elif self.explore == "random":
-            action = np.random.choice(self.actions[state.get_state()])
+            action = random.choice(list(self.actions[state.get_state()]))
         else:
-            action = self._epsilon_greedy_policy(state.get_state())  # default
+            action = self._epsilon_greedy_policy(state)  # default
 
         self.step_number += 1
 
@@ -56,14 +56,14 @@ class QLearningAgent(AgentBasisClass):
         pre_action = self.get_pre_action()
         if learning:
             if pre_state is None:
-                self.set_pre_state(state)
+                self.set_pre_state(state.get_state())
                 self.set_pre_action(action)
                 return
 
-            diff = self.gamma * self._get_max_q_val(state) - self.get_q_val(pre_state, pre_action)
+            diff = self.gamma * self._get_max_q_val(state.get_state()) - self.get_q_val(pre_state, pre_action)
             self.Q[pre_state][pre_action] += self.alpha * (reward + diff)
 
-        self.set_pre_state(state)
+        self.set_pre_state(state.get_state())
         self.set_pre_action(action)
 
     def reset(self):
@@ -96,9 +96,9 @@ class QLearningAgent(AgentBasisClass):
 
     def _epsilon_greedy_policy(self, state):
         if self.epsilon > np.random.random():
-            action = random.choice(self.actions[state])
+            action = random.choice(list(self.actions[state.get_state()]))
         else:
-            action = self._get_max_q_key(state)
+            action = self._get_max_q_key(state.get_state())
         return action
 
     def q_to_csv(self, filename=None):
