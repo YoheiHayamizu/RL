@@ -2,6 +2,8 @@
 images/
 figures/
 movies/
+csv/
+pkl/
 .idea/
 
 #log files
