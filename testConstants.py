@@ -1,3 +1,4 @@
 FIG_DIR = "figures/"
 MOVIE_DIR = "movies/"
-LEARNED_DIR = "learned/"
+CSV_DIR = "csv/"
+PKL_DIR = "pkl/"

@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from collections import defaultdict
 import matplotlib.pyplot as plt
+import dill
 import seaborn as sns;
 
 sns.set()
@@ -36,14 +37,30 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
         end = time.perf_counter()
         time_dict[str(method)] = round(end - start, GridConstant.ROUND_OFF)
 
+        # save timestep of each methods
+        tmp = pd.DataFrame(step_list_dict[str(method)])
+        tmp_df = pd.DataFrame()
+        for s in range(seed):
+            plot_df = pd.DataFrame(columns={"steps", "episode", "seed", "method"})
+            plot_df.loc[:, "steps"] = tmp[s]
+            plot_df.loc[:, "episode"] = range(len(tmp))
+            plot_df.loc[:, "seed"] = s
+            plot_df.loc[:, "method"] = str(method)
+            tmp_df = tmp_df.append(plot_df)
+        tmp_df.to_csv(CSV_DIR + "timesteps_{0}_{1}.csv".format(method.name, mdp.name))
+
+        # save mdp of last seed of run for each methods
+        with open(PKL_DIR + "mdp_{0}_{1}.pkl".format(method.name, mdp.name), "wb") as f:
+            dill.dump(mdp, f)
+
     # plot and save step time
     step_plot = pd.DataFrame(step_list_dict)
     step_plot_df = pd.DataFrame()
     for m in step_plot.keys():
         for s in step_plot[m].keys():
             step_plot_df = step_plot_df.append(episode_data_to_df(step_plot, m, s))
-    save_figure(step_plot_df, FIG_DIR + "converge_{0}.png".format(mdp.name))
-    step_plot_df.to_csv(FIG_DIR + "converge_{0}.csv".format(mdp.name))
+    save_figure(step_plot_df, FIG_DIR + "timesteps_{0}.png".format(mdp.name))
+    step_plot_df.to_csv(CSV_DIR + "timesteps_{0}.csv".format(mdp.name))
 
     # plot and save run time
     time_plot = pd.DataFrame(time_dict.items(), columns=["method", "time"])
@@ -54,14 +71,14 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     ax.set_title('Run Time by methods')
     ax.set_xticks(range(len(time_plot["method"])))
     plt.savefig(FIG_DIR + "runtime_{0}.png".format(mdp.name))
-    time_plot.to_csv(FIG_DIR + "runtime_{0}.csv".format(mdp.name))
+    time_plot.to_csv(CSV_DIR + "runtime_{0}.csv".format(mdp.name))
     del fig
     del ax
 
     # q table to csv
     for method in methods:
-        method.q_to_csv(FIG_DIR + "qtable_{0}.csv".format(method.name))
-        agent_to_pickle(method, FIG_DIR + "{0}.pkl".format(method.name))
+        method.q_to_csv(CSV_DIR + "qtable_{0}.csv".format(method.name))
+        agent_to_pickle(method, PKL_DIR + "{0}.pkl".format(method.name))
 
 
 def run_episodes(mdp, method, step=50, episode=100):
@@ -87,7 +104,7 @@ def save_figure(df, filename="figure.png"):
     fig, ax = plt.subplots()
     sns.lineplot(x="episode", y="steps", hue="method", data=df, ax=ax)
     plt.title(filename)
-    plt.legend(loc='upper right', bbox_to_anchor=(0, 0), ncol=1)
+    plt.legend(loc='upper right', bbox_to_anchor=(1, 1), ncol=1)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
     plt.savefig(filename)
@@ -105,7 +122,6 @@ def episode_data_to_df(_dict, method, seed):
 
 
 def agent_to_pickle(method, filename=None):
-    import dill
     if filename is None:
         filename = "{0}.pkl".format(method.name)
     with open(filename, "wb") as f:
@@ -113,7 +129,6 @@ def agent_to_pickle(method, filename=None):
 
 
 def load_agent(filename):
-    import dill
     with open(filename, "rb") as f:
         return dill.load(f)
 
@@ -141,6 +156,3 @@ if __name__ == "__main__":
     # methods = [rmax]
 
     run_experiment(mdp, methods, step=50, seed=10, episode=100)
-
-    mdp.save_graph_fig(FIG_DIR + "graph.png")
-    mdp.save_graph(FIG_DIR + "graph.p")
