@@ -74,23 +74,28 @@ class MDPGraphWorld(MDPBasisClass):
             neighbor = self.get_neighbor(node)
             neighbor_id = [node.id for node in neighbor]
             for a in ACTIONS:
-                if a == "goto":
-                    for n in neighbor_id + [node.id]:
-                        if not self.nodes[n].has_door():
-                            self.actions[node.get_state()].add((a, n))
-                            node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-                            self.actions[node.get_state()].add((a, n))
-                elif a == "approach":
-                    for n in neighbor_id + [node.id]:
-                        if self.nodes[n].has_door():
-                            self.actions[node.get_state()].add((a, n))
-                            node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-                            self.actions[node.get_state()].add((a, n))
-                else:
-                    if node.has_door():
-                        self.actions[node.get_state()].add((a, node.id))
-                        node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-                        self.actions[node.get_state()].add((a, node.id))
+                for n in neighbor_id + [node.id]:
+                    self.actions[node.get_state()].add((a, n))
+                    node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+                    self.actions[node.get_state()].add((a, n))
+            # for a in ACTIONS:
+            #     if a == "goto":
+            #         for n in neighbor_id + [node.id]:
+            #             if not self.nodes[n].has_door():
+            #                 self.actions[node.get_state()].add((a, n))
+            #                 node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+            #                 self.actions[node.get_state()].add((a, n))
+            #     elif a == "approach":
+            #         for n in neighbor_id + [node.id]:
+            #             if self.nodes[n].has_door():
+            #                 self.actions[node.get_state()].add((a, n))
+            #                 node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+            #                 self.actions[node.get_state()].add((a, n))
+            #     else:
+            #         if node.has_door():
+            #             self.actions[node.get_state()].add((a, node.id))
+            #             node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+            #             self.actions[node.get_state()].add((a, node.id))
         self.set_nodes()
         # for s, a in self.actions.items():
         #     print(s, a)
@@ -147,19 +152,19 @@ class MDPGraphWorld(MDPBasisClass):
 
         next_state = state
 
-        if action[0] == "opendoor" and state.has_door() and not state.door_open():
+        if action[0] == "opendoor" and state == self.nodes[action[1]] and state.has_door() and not state.door_open():
             state.set_door(state.has_door(), state.get_door_id(), True)  # TODO: ドアを開けたら対応するドアも開けるようにする
-            next_state = self.nodes[action[1]]
+            next_state = state
         elif action[0] == "gothrough" and state.has_door() and state.door_open():
             for node in self.get_neighbor(state):
                 if node.get_door_id() == state.get_door_id():
                     next_state = node
             next_state.set_door(state.has_door(), state.get_door_id(), True)
-        elif action[0] == "approach":
+        elif action[0] == "approach" and self.nodes[action[1]].has_door():
             next_state = self.nodes[action[1]]
             if next_state.get_door_id() == state.get_door_id():
                 next_state = state
-        elif action[0] == "goto":
+        elif action[0] == "goto" and not self.nodes[action[1]].has_door():
             next_state = self.nodes[action[1]]
         else:
             next_state = state
