@@ -1,9 +1,9 @@
 from RL.agent.AgentBasis import AgentBasisClass
-from collections import defaultdict
 import numpy as np
 import pandas as pd
 import random
-
+from collections import defaultdict
+import itertools
 
 class RMAXAgent(AgentBasisClass):
     def __init__(self, actions, name="RMAXAgent", rmax=1.0, u_count=2, gamma=0.99, epsilon_one=0.1):
@@ -88,13 +88,19 @@ class RMAXAgent(AgentBasisClass):
 
     def _update_policy_iteration(self):
         lim = int(np.log(1 / (self.epsilon_one * (1 - self.gamma))) / (1 - self.gamma))
+        tmp = list(map(lambda x: itertools.product(self.C_sa.keys(), self.C_sa[x].keys()), self.C_sa.keys()))
         for l in range(1, lim):
-            for s in self.C_sa.keys():
-                for a in self.C_sa[s].keys():
-                    if self.get_count(s, a) >= self.u_count:
-                        self.Q[s][a] = self.get_reward(s, a) + self.gamma * \
-                                       sum([(self.get_transition(s, a, sp) * self._get_max_q_val(sp))
-                                            for sp in self.Q.keys()])
+            for s, a in tmp[l]:
+                if self.get_count(s, a) >= self.u_count:
+                    self.Q[s][a] = self.get_reward(s, a) + self.gamma * \
+                                   sum([(self.get_transition(s, a, sp) * self._get_max_q_val(sp))
+                                        for sp in self.Q.keys()])
+            # for s in self.C_sa.keys():
+            #     for a in self.C_sa[s].keys():
+            #         if self.get_count(s, a) >= self.u_count:
+            #             self.Q[s][a] = self.get_reward(s, a) + self.gamma * \
+            #                            sum([(self.get_transition(s, a, sp) * self._get_max_q_val(sp))
+            #                                 for sp in self.Q.keys()])
 
     def reset(self):
         self.u_count = self.init_urate
