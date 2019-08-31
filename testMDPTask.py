@@ -20,84 +20,76 @@ sns.set()
 
 
 def run_experiment(mdp, methods, step=50, episode=100, seed=10):
-    time_dict = defaultdict(float)
-    step_list_dict = defaultdict(lambda: defaultdict(list))
+    timestep_list_dict = defaultdict(lambda: defaultdict(list))
+    cumulative_reward_dict = defaultdict(lambda: defaultdict(list))
     for method in methods:
         # Record how long each agent spends learning.
         print("Running experiment: \n" + str(method))
 
-        start = time.perf_counter()
-
+        # save timestep of each methods
+        df_timestep = pd.DataFrame()
+        df_cumulative = pd.DataFrame()
         for s in range(seed):
             method.reset()
             print("-------- new seed: {0:02} starts --------".format(s))
-            reward_list = run_episodes(mdp, method, step, episode)
-            step_list_dict[str(method)][s] = reward_list
+            timestep_list, cumulative_reward_list = run_episodes(mdp, method, step, episode)
+            timestep_list_dict[str(method)][s] = timestep_list
+            cumulative_reward_dict[str(method)][s] = cumulative_reward_list
 
-        end = time.perf_counter()
-        time_dict[str(method)] = round(end - start, GridConstant.ROUND_OFF)
+            # save mdp of last seed of run for each methods
+            with open(PKL_DIR + "mdp_{0}_{1}_{2}.pkl".format(method.name, mdp.name, s), "wb") as f:
+                dill.dump(mdp, f)
+            method.q_to_csv(CSV_DIR + "qtable_{0}_{1}.csv".format(method.name, s))
+            agent_to_pickle(method, PKL_DIR + "{0}_{1}.pkl".format(method.name, s))
 
-        # save timestep of each methods
-        tmp = pd.DataFrame(step_list_dict[str(method)])
-        tmp_df = pd.DataFrame()
-        for s in range(seed):
-            plot_df = pd.DataFrame(columns={"steps", "episode", "seed", "method"})
-            plot_df.loc[:, "steps"] = tmp[s]
-            plot_df.loc[:, "episode"] = range(len(tmp))
-            plot_df.loc[:, "seed"] = s
-            plot_df.loc[:, "method"] = str(method)
-            tmp_df = tmp_df.append(plot_df)
-        tmp_df.to_csv(CSV_DIR + "timesteps_{0}_{1}.csv".format(method.name, mdp.name))
+            tmp_timestep = pd.DataFrame(timestep_list_dict[str(method)])
+            df_timestep = episode_data_to_df(tmp_timestep, df_timestep, method, s,
+                                             columns=("steps", "episode", "seed", "method"))
+            tmp_timestep.to_csv(CSV_DIR + "timestep_{0}_{1}_{2}.csv".format(method.name, mdp.name, s))
+            tmp_cumulative = pd.DataFrame(timestep_list_dict[str(method)])
+            df_cumulative = episode_data_to_df(tmp_timestep, df_timestep, method, s,
+                                               columns=("cumulative_reward", "episode", "seed", "method"))
+            tmp_cumulative.to_csv(CSV_DIR + "cumulative_reward_{0}_{1}_{2}.csv".format(method.name, mdp.name, s))
+        df_timestep.to_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(method.name, mdp.name))
+        df_cumulative.to_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(method.name, mdp.name))
 
-        # save mdp of last seed of run for each methods
-        with open(PKL_DIR + "mdp_{0}_{1}.pkl".format(method.name, mdp.name), "wb") as f:
-            dill.dump(mdp, f)
-
-    # plot and save step time
-    step_plot = pd.DataFrame(step_list_dict)
+    # plot and save timestep
+    step_plot = pd.DataFrame(timestep_list_dict)
     step_plot_df = pd.DataFrame()
     for m in step_plot.keys():
         for s in step_plot[m].keys():
-            step_plot_df = step_plot_df.append(episode_data_to_df(step_plot, m, s))
+            step_plot_df = episode_data_to_df(step_plot[m], step_plot_df, m, s)
     save_figure(step_plot_df, FIG_DIR + "timesteps_{0}.png".format(mdp.name))
-    step_plot_df.to_csv(CSV_DIR + "timesteps_{0}.csv".format(mdp.name))
 
-    # plot and save run time
-    time_plot = pd.DataFrame(time_dict.items(), columns=["method", "time"])
-    fig, ax = plt.subplots()
-    ax.bar(time_plot["method"], time_plot["time"], width=0.2)
-    # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax.set_ylabel('Run Time[s]')
-    ax.set_title('Run Time by methods')
-    ax.set_xticks(range(len(time_plot["method"])))
-    plt.savefig(FIG_DIR + "runtime_{0}.png".format(mdp.name))
-    time_plot.to_csv(CSV_DIR + "runtime_{0}.csv".format(mdp.name))
-    del fig
-    del ax
-
-    # q table to csv
-    for method in methods:
-        method.q_to_csv(CSV_DIR + "qtable_{0}.csv".format(method.name))
-        agent_to_pickle(method, PKL_DIR + "{0}.pkl".format(method.name))
+    reward_plot = pd.DataFrame(cumulative_reward_dict)
+    reward_plot_df = pd.DataFrame()
+    for m in step_plot.keys():
+        for s in step_plot[m].keys():
+            reward_plot_df = episode_data_to_df(reward_plot[m], reward_plot_df, m, s)
+    save_figure(reward_plot_df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name))
 
 
 def run_episodes(mdp, method, step=50, episode=100):
-    step_list = list()
+    timestep_list = list()
+    cumulative_reward_list = list()
     for e in range(episode):
         print("-------- new episode: {0:04} starts --------".format(e))
         mdp.reset()
+        cumulative_reward = 0.0
         method.reset_of_episode()
         state = mdp.get_cur_state()
         action = method.act(state)
         for t in range(1, step):
             mdp, reward, done, info = mdp.step(action)
+            cumulative_reward += reward
             state = mdp.get_cur_state()
             action = method.act(state)
             method.update(state, action, reward)
             if done:
                 break
-        step_list.append(method.step_number)
-    return step_list
+        timestep_list.append(method.step_number)
+        cumulative_reward_list.append(cumulative_reward)
+    return timestep_list, cumulative_reward_list
 
 
 def save_figure(df, filename="figure.png"):
@@ -112,13 +104,14 @@ def save_figure(df, filename="figure.png"):
     del ax
 
 
-def episode_data_to_df(_dict, method, seed):
-    plot_df = pd.DataFrame(columns={"steps", "episode", "seed", "method"})
-    plot_df.loc[:, "steps"] = _dict[method][seed]
-    plot_df.loc[:, "episode"] = range(len(_dict[method][seed]))
-    plot_df.loc[:, "seed"] = seed
-    plot_df.loc[:, "method"] = str(method)
-    return plot_df
+def episode_data_to_df(tmp, df, method, seed, columns=("steps", "episode", "seed", "method")):
+    plot_df = pd.DataFrame(columns=columns)
+    plot_df.loc[:, columns[0]] = tmp[seed]
+    plot_df.loc[:, columns[1]] = range(len(tmp[seed]))
+    plot_df.loc[:, columns[2]] = seed
+    plot_df.loc[:, columns[3]] = str(method)
+    df = df.append(plot_df)
+    return df
 
 
 def agent_to_pickle(method, filename=None):
