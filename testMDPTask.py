@@ -104,9 +104,9 @@ def save_figure(df, filename="figure.png"):
     fig, ax = plt.subplots()
     sns.lineplot(x="episode", y="steps", hue="method", data=df, ax=ax)
     plt.title(filename)
-    plt.legend(loc='upper right', bbox_to_anchor=(1, 1), ncol=1)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
+    plt.legend(loc='upper right', bbox_to_anchor=(1, 1), ncol=1)
     plt.savefig(filename)
     del fig
     del ax
