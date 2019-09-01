@@ -88,8 +88,8 @@ class RMAXAgent(AgentBasisClass):
 
     def _update_policy_iteration(self):
         lim = int(np.log(1 / (self.epsilon_one * (1 - self.gamma))) / (1 - self.gamma))
-        tmp = list(map(lambda x: itertools.product(self.C_sa.keys(), self.C_sa[x].keys()), self.C_sa.keys()))
-        for l in range(1, lim):
+        tmp = list(map(lambda x: itertools.product(self.C_sa.keys(), self.C_sa[x].keys()), self.C_sa.keys())) * lim
+        for l in range(0, lim):
             for s, a in tmp[l]:
                 if self.get_count(s, a) >= self.u_count:
                     self.Q[s][a] = self.get_reward(s, a) + self.gamma * \
