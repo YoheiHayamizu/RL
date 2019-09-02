@@ -29,7 +29,7 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
         # save timestep of each methods
         df_timestep = pd.DataFrame()
         df_cumulative = pd.DataFrame()
-        for s in range(seed):
+        for s in range(0, seed):
             method.reset()
             print("-------- new seed: {0:02} starts --------".format(s))
             timestep_list, cumulative_reward_list = run_episodes(mdp, method, step, episode)
@@ -144,8 +144,8 @@ if __name__ == "__main__":
     sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=0.1, gamma=0.99, epsilon=0.1, explore="uniform")
     rmax = RMAXAgent(mdp.get_actions(), "RMAX", rmax=1.0, u_count=2, gamma=0.95, epsilon_one=0.99)
 
-    methods = [qLearning, sarsa, rmax]
+    # methods = [qLearning, sarsa, rmax]
     # methods = [qLearning, sarsa]
-    # methods = [rmax]
+    methods = [rmax]
 
-    run_experiment(mdp, methods, step=50, seed=10, episode=100)
+    run_experiment(mdp, methods, step=50, seed=1, episode=100)

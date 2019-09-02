@@ -5,6 +5,7 @@ import random
 from collections import defaultdict
 import itertools
 
+
 class RMAXAgent(AgentBasisClass):
     def __init__(self, actions, name="RMAXAgent", rmax=1.0, u_count=2, gamma=0.99, epsilon_one=0.1):
         super().__init__(name, actions, gamma)
@@ -93,8 +94,8 @@ class RMAXAgent(AgentBasisClass):
             for s, a in tmp[l]:
                 if self.get_count(s, a) >= self.u_count:
                     self.Q[s][a] = self.get_reward(s, a) + self.gamma * \
-                                   sum([(self.get_transition(s, a, sp) * self._get_max_q_val(sp))
-                                        for sp in self.Q.keys()])
+                                   sum([self.get_transition(s, a, sp) * self._get_max_q_val(sp) for sp in
+                                        self.Q.keys()])
             # for s in self.C_sa.keys():
             #     for a in self.C_sa[s].keys():
             #         if self.get_count(s, a) >= self.u_count:
