@@ -46,10 +46,12 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
             df_timestep = episode_data_to_df(tmp_timestep, df_timestep, method, s,
                                              columns=("steps", "episode", "seed", "method"))
             tmp_timestep.to_csv(CSV_DIR + "timestep_{0}_{1}_{2}.csv".format(method.name, mdp.name, s))
-            tmp_cumulative = pd.DataFrame(timestep_list_dict[str(method)])
-            df_cumulative = episode_data_to_df(tmp_timestep, df_timestep, method, s,
-                                               columns=("cumulative_reward", "episode", "seed", "method"))
+
+            tmp_cumulative = pd.DataFrame(cumulative_reward_dict[str(method)])
+            df_cumulative = episode_data_to_df(tmp_cumulative, df_timestep, method, s,
+                                               columns=("Cumulative Reward", "episode", "seed", "method"))
             tmp_cumulative.to_csv(CSV_DIR + "cumulative_reward_{0}_{1}_{2}.csv".format(method.name, mdp.name, s))
+
         df_timestep.to_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(method.name, mdp.name))
         df_cumulative.to_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(method.name, mdp.name))
 
@@ -59,14 +61,16 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     for m in step_plot.keys():
         for s in step_plot[m].keys():
             step_plot_df = episode_data_to_df(step_plot[m], step_plot_df, m, s)
-    save_figure(step_plot_df, FIG_DIR + "timesteps_{0}.png".format(mdp.name), loc='upper right', pos=(1, 1))
+    save_figure(step_plot_df, FIG_DIR + "timesteps_{0}.png".format(mdp.name), loc='upper right', pos=(1, 1),
+                columns=("Timestep", "episode", "seed", "method"))
 
     reward_plot = pd.DataFrame(cumulative_reward_dict)
     reward_plot_df = pd.DataFrame()
     for m in step_plot.keys():
         for s in step_plot[m].keys():
             reward_plot_df = episode_data_to_df(reward_plot[m], reward_plot_df, m, s)
-    save_figure(reward_plot_df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc="lower right", pos=(1, 0))
+    save_figure(reward_plot_df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc="lower right", pos=(1, 0),
+                columns=("Cumulative Reward", "episode", "seed", "method"))
 
 
 def run_episodes(mdp, method, step=50, episode=100):
@@ -92,10 +96,11 @@ def run_episodes(mdp, method, step=50, episode=100):
     return timestep_list, cumulative_reward_list
 
 
-def save_figure(df, filename="figure.png", loc='upper right', pos=(1, 1)):
+def save_figure(df, filename="figure.png", loc='upper right', pos=(1, 1),
+                columns=("steps", "episode", "seed", "method")):
     fig, ax = plt.subplots()
-    sns.lineplot(x="episode", y="steps", hue="method", data=df, ax=ax)
-    plt.title(filename)
+    sns.lineplot(x=columns[1], y=columns[0], hue="method", data=df, ax=ax)
+    # plt.title(filename)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
     plt.legend(loc=loc, bbox_to_anchor=pos, ncol=1)
