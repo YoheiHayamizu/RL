@@ -44,12 +44,12 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
 
             tmp_timestep = pd.DataFrame(timestep_list_dict[str(method)])
             df_timestep = episode_data_to_df(tmp_timestep, df_timestep, method, s,
-                                             columns=("steps", "episode", "seed", "method"))
+                                             columns=("Timestep", "episode", "seed", "method"))
             tmp_timestep.to_csv(CSV_DIR + "timestep_{0}_{1}_{2}.csv".format(method.name, mdp.name, s))
 
             tmp_cumulative = pd.DataFrame(cumulative_reward_dict[str(method)])
             df_cumulative = episode_data_to_df(tmp_cumulative, df_timestep, method, s,
-                                               columns=("Cumulative Reward", "episode", "seed", "method"))
+                                               columns=("Cumulative_Reward", "episode", "seed", "method"))
             tmp_cumulative.to_csv(CSV_DIR + "cumulative_reward_{0}_{1}_{2}.csv".format(method.name, mdp.name, s))
 
         df_timestep.to_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(method.name, mdp.name))
@@ -70,7 +70,76 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
         for s in step_plot[m].keys():
             reward_plot_df = episode_data_to_df(reward_plot[m], reward_plot_df, m, s)
     save_figure(reward_plot_df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc="lower right", pos=(1, 0),
-                columns=("Cumulative Reward", "episode", "seed", "method"))
+                columns=("Cumulative_Reward", "episode", "seed", "method"))
+
+
+def create_figure_timestep(methods, mdp):
+    merge_timestep(methods, mdp)
+    tmp = pd.read_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(methods[0].name, mdp.name))
+    for method in methods[1:]:
+        tmp = tmp.append(pd.read_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(method.name, mdp.name)))
+    df = pd.DataFrame(columns=("Timestep", "episode", "seed", "method"))
+    df["Timestep"] = tmp.iloc[:, 1]
+    df["episode"] = tmp.iloc[:, 2]
+    df["seed"] = tmp.iloc[:, 3]
+    df["method"] = tmp.iloc[:, 4]
+    save_figure(df, FIG_DIR + "timesteps_{0}.png".format(mdp.name), loc='upper right', pos=(1, 1),
+                columns=("Timestep", "episode", "seed", "method"))
+
+
+def merge_timestep(methods, mdp):
+    df = pd.DataFrame(columns=("Timestep", "episode", "seed", "method"))
+    for method in methods:
+        tmp = pd.read_csv(CSV_DIR + "timestep_{0}_{1}_{2}.csv".format(method.name, mdp.name, 9))
+        df = pd.DataFrame(columns=("Timestep", "episode", "seed", "method"))
+        for key in tmp.iloc[:, 1:].keys():
+            tmp_df = pd.DataFrame(columns=("Timestep", "episode", "seed", "method"))
+            tmp_df["episode"] = tmp["Unnamed: 0"]
+            tmp_df["seed"] = tmp.loc[:, key]
+            tmp_df["Timestep"] = window(tmp.loc[:, key], win=10)
+            tmp_df["method"] = method.name
+            df = df.append(tmp_df)
+        df.to_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(method.name, mdp.name))
+
+
+def create_figure_cumulative_reward(methods, mdp):
+    merge_cumulative_rewards(methods, mdp)
+    tmp = pd.read_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(methods[0].name, mdp.name))
+    for method in methods[1:]:
+        tmp = tmp.append(pd.read_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(method.name, mdp.name)))
+    df = pd.DataFrame(columns=("Cumulative_Reward", "episode", "seed", "method"))
+    df["Cumulative_Reward"] = tmp.iloc[:, 1]
+    df["episode"] = tmp.iloc[:, 2]
+    df["seed"] = tmp.iloc[:, 3]
+    df["method"] = tmp.iloc[:, 4]
+    save_figure(df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc='upper right', pos=(1, 1),
+                columns=("Cumulative_Reward", "episode", "seed", "method"))
+
+
+def merge_cumulative_rewards(methods, mdp):
+    df = pd.DataFrame(columns=("Cumulative_Reward", "episode", "seed", "method"))
+    for method in methods:
+        tmp = pd.read_csv(CSV_DIR + "cumulative_reward_{0}_{1}_{2}.csv".format(method.name, mdp.name, 9))
+        df = pd.DataFrame(columns=("Cumulative_Reward", "episode", "seed", "method"))
+        for key in tmp.iloc[:, 1:].keys():
+            tmp_df = pd.DataFrame(columns=("Cumulative_Reward", "episode", "seed", "method"))
+            tmp_df["episode"] = tmp["Unnamed: 0"]
+            tmp_df["seed"] = tmp.loc[:, key]
+            tmp_df["Cumulative_Reward"] = window(tmp.loc[:, key], win=10)
+            tmp_df["method"] = method.name
+            df = df.append(tmp_df)
+        df.to_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(method.name, mdp.name))
+
+
+def window(x, win=1):
+    tmp = np.array(range(len(x)), dtype=float)
+    counter = 0
+    while counter < len(x):
+        tmp[counter] = float(x[counter:counter+win].mean())
+        if len(x[counter:]) < win:
+            tmp[counter:] = float(x[counter:].mean())
+        counter += 1
+    return pd.Series(tmp)
 
 
 def run_episodes(mdp, method, step=50, episode=100):
@@ -153,4 +222,4 @@ if __name__ == "__main__":
     # methods = [qLearning, sarsa]
     methods = [rmax]
 
-    run_experiment(mdp, methods, step=50, seed=1, episode=100)
+    # run_experiment(mdp, methods, step=50, seed=1, episode=100)
