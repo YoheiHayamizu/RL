@@ -39,8 +39,8 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
             # save mdp of last seed of run for each methods
             with open(PKL_DIR + "mdp_{0}_{1}_{2}.pkl".format(method.name, mdp.name, s), "wb") as f:
                 dill.dump(mdp, f)
-            method.q_to_csv(CSV_DIR + "qtable_{0}_{1}.csv".format(method.name, s))
-            agent_to_pickle(method, PKL_DIR + "{0}_{1}.pkl".format(method.name, s))
+            method.q_to_csv(CSV_DIR + "qtable_{0}_{1}_{2}.csv".format(method.name, mdp.name, s))
+            agent_to_pickle(method, PKL_DIR + "{0}_{1}_{2}.pkl".format(method.name, mdp.name, s))
 
             tmp_timestep = pd.DataFrame(timestep_list_dict[str(method)])
             df_timestep = episode_data_to_df(tmp_timestep, df_timestep, method, s,
@@ -60,7 +60,8 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     step_plot_df = pd.DataFrame()
     for m in step_plot.keys():
         for s in step_plot[m].keys():
-            step_plot_df = episode_data_to_df(step_plot[m], step_plot_df, m, s)
+            step_plot_df = episode_data_to_df(step_plot[m], step_plot_df, m, s,
+                                             columns=("Timestep", "episode", "seed", "method"))
     save_figure(step_plot_df, FIG_DIR + "timesteps_{0}.png".format(mdp.name), loc='upper right', pos=(1, 1),
                 columns=("Timestep", "episode", "seed", "method"))
 
@@ -68,7 +69,8 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     reward_plot_df = pd.DataFrame()
     for m in step_plot.keys():
         for s in step_plot[m].keys():
-            reward_plot_df = episode_data_to_df(reward_plot[m], reward_plot_df, m, s)
+            reward_plot_df = episode_data_to_df(reward_plot[m], reward_plot_df, m, s,
+                                             columns=("Cumulative_Reward", "episode", "seed", "method"))
     save_figure(reward_plot_df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc="lower right", pos=(1, 0),
                 columns=("Cumulative_Reward", "episode", "seed", "method"))
 
@@ -112,7 +114,7 @@ def create_figure_cumulative_reward(methods, mdp):
     df["episode"] = tmp.iloc[:, 2]
     df["seed"] = tmp.iloc[:, 3]
     df["method"] = tmp.iloc[:, 4]
-    save_figure(df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc='upper right', pos=(1, 1),
+    save_figure(df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc="lower right", pos=(1, 0),
                 columns=("Cumulative_Reward", "episode", "seed", "method"))
 
 
@@ -166,7 +168,7 @@ def run_episodes(mdp, method, step=50, episode=100):
 
 
 def save_figure(df, filename="figure.png", loc='upper right', pos=(1, 1),
-                columns=("steps", "episode", "seed", "method")):
+                columns=("Timestep", "episode", "seed", "method")):
     fig, ax = plt.subplots()
     sns.lineplot(x=columns[1], y=columns[0], hue="method", data=df, ax=ax)
     # plt.title(filename)
@@ -178,7 +180,7 @@ def save_figure(df, filename="figure.png", loc='upper right', pos=(1, 1),
     del ax
 
 
-def episode_data_to_df(tmp, df, method, seed, columns=("steps", "episode", "seed", "method")):
+def episode_data_to_df(tmp, df, method, seed, columns=("Timestep", "episode", "seed", "method")):
     plot_df = pd.DataFrame(columns=columns)
     plot_df.loc[:, columns[0]] = tmp[seed]
     plot_df.loc[:, columns[1]] = range(len(tmp[seed]))
