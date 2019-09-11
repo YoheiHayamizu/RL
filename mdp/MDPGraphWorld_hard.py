@@ -177,9 +177,20 @@ class MDPGraphWorld(MDPBasisClass):
         if state.success_rate < random.random() and action[0] == "gothrough":
             action = ("fail", action[1])
 
+        if state.success_rate < random.random() and action[0] == "opendoor":
+            action = ("fail", action[1])
+
+        if state.success_rate < random.random() and action[0] == "approach":
+            miss = random.choice(self.get_neighbor(state) + [state])
+            action = ("approach", miss.id)
+
+        if state.success_rate < random.random() and action[0] == "goto":
+            miss = random.choice(self.get_neighbor(state) + [state])
+            action = ("goto", miss.id)
+
         next_state = state
 
-        if action[0] == "opendoor" and state == self.nodes[action[1]] and state.has_door() and not state.door_open():
+        if action[0] == "opendoor" and state == self.nodes[action[1]] and state.has_door():
             state.set_door(state.has_door(), state.get_door_id(), True)  # TODO: ドアを開けたら対応するドアも開けるようにする
             next_state = state
         elif action[0] == "gothrough" and state.has_door() and state.door_open():
