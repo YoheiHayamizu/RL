@@ -68,7 +68,7 @@ class MDPBasisClass(object):
         """
         next_state = self.__transition_func(self.cur_state, action)
         reward = self.__reward_func(self.cur_state, action, next_state)
-        done = next_state.is_terminal()
+        done = self.cur_state.is_terminal()
         self.cur_state = next_state
 
         return self, reward, done, self.get_params()
