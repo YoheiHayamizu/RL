@@ -15,8 +15,32 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import dill
 import seaborn as sns;
+import copy
 
 sns.set()
+
+
+def run_episodes(mdp, method, step=50, episode=100):
+    timestep_list = list()
+    cumulative_reward_list = list()
+    for e in range(episode):
+        print("-------- new episode: {0:04} starts --------".format(e))
+        mdp.reset()
+        cumulative_reward = 0.0
+        method.reset_of_episode()
+        state = mdp.get_cur_state()
+        action = method.act(state)
+        for t in range(1, step):
+            mdp, reward, done, info = mdp.step(action)
+            cumulative_reward += reward
+            state = mdp.get_cur_state()
+            action = method.act(state)
+            method.update(state, action, reward)
+            if done:
+                break
+        timestep_list.append(method.step_number)
+        cumulative_reward_list.append(cumulative_reward)
+    return timestep_list, cumulative_reward_list
 
 
 def run_experiment(mdp, methods, step=50, episode=100, seed=10):
@@ -30,27 +54,28 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
         df_timestep = pd.DataFrame()
         df_cumulative = pd.DataFrame()
         for s in range(0, seed):
+            tmp_mdp = copy.deepcopy(mdp)
             method.reset()
             print("-------- new seed: {0:02} starts --------".format(s))
-            timestep_list, cumulative_reward_list = run_episodes(mdp, method, step, episode)
+            timestep_list, cumulative_reward_list = run_episodes(tmp_mdp, method, step, episode)
             timestep_list_dict[str(method)][s] = timestep_list
             cumulative_reward_dict[str(method)][s] = cumulative_reward_list
 
             # save mdp of last seed of run for each methods
-            with open(PKL_DIR + "mdp_{0}_{1}_{2}.pkl".format(method.name, mdp.name, s), "wb") as f:
-                dill.dump(mdp, f)
-            method.q_to_csv(CSV_DIR + "qtable_{0}_{1}_{2}.csv".format(method.name, mdp.name, s))
-            agent_to_pickle(method, PKL_DIR + "{0}_{1}_{2}.pkl".format(method.name, mdp.name, s))
+            with open(PKL_DIR + "mdp_{0}_{1}_{2}.pkl".format(method.name, tmp_mdp.name, s), "wb") as f:
+                dill.dump(tmp_mdp, f)
+            method.q_to_csv(CSV_DIR + "qtable_{0}_{1}_{2}.csv".format(method.name, tmp_mdp.name, s))
+            agent_to_pickle(method, PKL_DIR + "{0}_{1}_{2}.pkl".format(method.name, tmp_mdp.name, s))
 
             tmp_timestep = pd.DataFrame(timestep_list_dict[str(method)])
             df_timestep = episode_data_to_df(tmp_timestep, df_timestep, method, s,
                                              columns=("Timestep", "episode", "seed", "method"))
-            tmp_timestep.to_csv(CSV_DIR + "timestep_{0}_{1}_{2}.csv".format(method.name, mdp.name, s))
+            tmp_timestep.to_csv(CSV_DIR + "timestep_{0}_{1}_{2}.csv".format(method.name, tmp_mdp.name, s))
 
             tmp_cumulative = pd.DataFrame(cumulative_reward_dict[str(method)])
             df_cumulative = episode_data_to_df(tmp_cumulative, df_timestep, method, s,
                                                columns=("Cumulative_Reward", "episode", "seed", "method"))
-            tmp_cumulative.to_csv(CSV_DIR + "cumulative_reward_{0}_{1}_{2}.csv".format(method.name, mdp.name, s))
+            tmp_cumulative.to_csv(CSV_DIR + "cumulative_reward_{0}_{1}_{2}.csv".format(method.name, tmp_mdp.name, s))
 
         df_timestep.to_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(method.name, mdp.name))
         df_cumulative.to_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(method.name, mdp.name))
@@ -61,7 +86,7 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     for m in step_plot.keys():
         for s in step_plot[m].keys():
             step_plot_df = episode_data_to_df(step_plot[m], step_plot_df, m, s,
-                                             columns=("Timestep", "episode", "seed", "method"))
+                                              columns=("Timestep", "episode", "seed", "method"))
     save_figure(step_plot_df, FIG_DIR + "timesteps_{0}.png".format(mdp.name), loc='upper right', pos=(1, 1),
                 columns=("Timestep", "episode", "seed", "method"))
 
@@ -70,7 +95,7 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
     for m in step_plot.keys():
         for s in step_plot[m].keys():
             reward_plot_df = episode_data_to_df(reward_plot[m], reward_plot_df, m, s,
-                                             columns=("Cumulative_Reward", "episode", "seed", "method"))
+                                                columns=("Cumulative_Reward", "episode", "seed", "method"))
     save_figure(reward_plot_df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc="lower right", pos=(1, 0),
                 columns=("Cumulative_Reward", "episode", "seed", "method"))
 
@@ -137,34 +162,11 @@ def window(x, win=1):
     tmp = np.array(range(len(x)), dtype=float)
     counter = 0
     while counter < len(x):
-        tmp[counter] = float(x[counter:counter+win].mean())
+        tmp[counter] = float(x[counter:counter + win].mean())
         if len(x[counter:]) < win:
             tmp[counter:] = float(x[counter:].mean())
         counter += 1
     return pd.Series(tmp)
-
-
-def run_episodes(mdp, method, step=50, episode=100):
-    timestep_list = list()
-    cumulative_reward_list = list()
-    for e in range(episode):
-        print("-------- new episode: {0:04} starts --------".format(e))
-        mdp.reset()
-        cumulative_reward = 0.0
-        method.reset_of_episode()
-        state = mdp.get_cur_state()
-        action = method.act(state)
-        for t in range(1, step):
-            mdp, reward, done, info = mdp.step(action)
-            cumulative_reward += reward
-            state = mdp.get_cur_state()
-            action = method.act(state)
-            method.update(state, action, reward)
-            if done:
-                break
-        timestep_list.append(method.step_number)
-        cumulative_reward_list.append(cumulative_reward)
-    return timestep_list, cumulative_reward_list
 
 
 def save_figure(df, filename="figure.png", loc='upper right', pos=(1, 1),
