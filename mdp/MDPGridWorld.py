@@ -34,7 +34,6 @@ class MDPGridWorld(MDPBasisClass):
         self.init_loc = init_loc
         self.init_state = MDPGridWorldState(init_loc[0], init_loc[1])
         self.cur_state = self.init_state
-        self.actions = ACTIONS
         self.goals = goals_loc
         self.walls = walls_loc
         self.holes = holes_loc
@@ -47,6 +46,7 @@ class MDPGridWorld(MDPBasisClass):
         self.step_cost = step_cost
         self.hole_cost = hole_cost
         self.name = name
+        self.init_actions()
         super().__init__(self.init_state, self.actions, self._transition_func, self._reward_func,
                          self.step_cost)
 
@@ -84,6 +84,11 @@ class MDPGridWorld(MDPBasisClass):
 
     def get_holes_loc(self):
         return self.holes
+
+    def get_actions(self, state=None):
+        if state is None:
+            return self.actions
+        return self.actions[int(state[1:])]
 
     # Setter
 
@@ -158,6 +163,9 @@ class MDPGridWorld(MDPBasisClass):
         else:
             return 0 - self.step_cost
 
+    def init_actions(self):
+        self.actions = {"s: ({0}, {1})".format(i, j): ACTIONS for i in range(self.width) for j in range(self.height)}
+
 
 class MDPGridWorldState(MDPStateClass):
     def __init__(self, x, y, is_terminal=False):
@@ -183,6 +191,9 @@ class MDPGridWorldState(MDPStateClass):
     def __eq__(self, other):
         assert isinstance(other, MDPGridWorldState), "Arg object is not in" + type(self).__module__
         return self.x == other.x and self.y == other.y
+
+    def get_state(self):
+        return self.__str__()
 
 
 if __name__ == "__main__":

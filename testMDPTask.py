@@ -2,6 +2,8 @@ from RL.mdp.MDPGridWorld import MDPGridWorld
 import RL.mdp.GridWorldConstants as GridConstant
 from RL.mdp.MDPGraphWorld import MDPGraphWorld
 import RL.mdp.GraphWorldConstants as GraphConstant
+from RL.mdp.MDPGraphWorld_hard import MDPGraphWorld as MDPGraphWorld_hard
+import RL.mdp.GraphWorldConstants_hard as GraphConstant_hard
 
 from RL.agent.qlearning import QLearningAgent
 from RL.agent.sarsa import SarsaAgent
@@ -209,21 +211,21 @@ if __name__ == "__main__":
     grid_world = MDPGridWorld(5, 5,
                               init_loc=(0, 0), goals_loc=[(4, 4)], walls_loc=[], holes_loc=[],
                               is_goal_terminal=True, is_rand_init=False,
-                              slip_prob=0.0, step_cost=1.0, hole_cost=1.0,
+                              slip_prob=0.5, step_cost=1.0, hole_cost=1.0,
                               name="gridworld")
-    graph_world = MDPGraphWorld(node_num=15, is_goal_terminal=True, step_cost=1.0,
-                                success_rate=GraphConstant.success_rate_dict2)
+    # graph_world = MDPGraphWorld(node_num=15, is_goal_terminal=True, step_cost=1.0,
+    #                             success_rate=GraphConstant.success_rate_dict2)
 
-    # mdp = grid_world
-    mdp = graph_world
-
+    mdp = grid_world
+    # mdp = graph_world_normal
+    #
     qLearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=0.1, gamma=0.99, epsilon=0.1,
                                explore="uniform")
-    sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=0.1, gamma=0.99, epsilon=0.1, explore="uniform")
-    rmax = RMAXAgent(mdp.get_actions(), "RMAX", rmax=1.0, u_count=2, gamma=0.95, epsilon_one=0.99)
+    # sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=0.1, gamma=0.99, epsilon=0.1, explore="uniform")
+    rmax = RMAXAgent(mdp.get_actions(), "RMAX", rmax=10, u_count=2, gamma=0.9, epsilon_one=0.99)
 
     # methods = [qLearning, sarsa, rmax]
     # methods = [qLearning, sarsa]
-    methods = [rmax]
+    methods = [qLearning, rmax]
 
-    # run_experiment(mdp, methods, step=50, seed=1, episode=100)
+    run_experiment(mdp, methods, step=100, seed=10, episode=300)
