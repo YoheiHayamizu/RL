@@ -160,7 +160,7 @@ def merge_cumulative_rewards(methods, mdp):
         df.to_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(method.name, mdp.name))
 
 
-def window(x, win=1):
+def window(x, win=10):
     tmp = np.array(range(len(x)), dtype=float)
     counter = 0
     while counter < len(x):
