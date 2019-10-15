@@ -37,8 +37,8 @@ def run_episodes(mdp, method, step=50, episode=100):
             cumulative_reward += reward
             state = mdp.get_cur_state()
             action = method.act(state)
-            method.update(state, action, reward)
-            if done:
+            # method.update(state, action, reward)
+            if not done:
                 break
         timestep_list.append(method.step_number)
         cumulative_reward_list.append(cumulative_reward)
@@ -125,7 +125,7 @@ def merge_timestep(methods, mdp):
             tmp_df = pd.DataFrame(columns=("Timestep", "episode", "seed", "method"))
             tmp_df["episode"] = tmp["Unnamed: 0"]
             tmp_df["seed"] = tmp.loc[:, key]
-            tmp_df["Timestep"] = window(tmp.loc[:, key], win=10)
+            tmp_df["Timestep"] = window(tmp.loc[:, key], win=50)
             tmp_df["method"] = method.name
             df = df.append(tmp_df)
         df.to_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(method.name, mdp.name))
@@ -154,7 +154,7 @@ def merge_cumulative_rewards(methods, mdp):
             tmp_df = pd.DataFrame(columns=("Cumulative_Reward", "episode", "seed", "method"))
             tmp_df["episode"] = tmp["Unnamed: 0"]
             tmp_df["seed"] = tmp.loc[:, key]
-            tmp_df["Cumulative_Reward"] = window(tmp.loc[:, key], win=10)
+            tmp_df["Cumulative_Reward"] = window(tmp.loc[:, key], win=50)
             tmp_df["method"] = method.name
             df = df.append(tmp_df)
         df.to_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(method.name, mdp.name))
