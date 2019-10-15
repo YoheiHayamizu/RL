@@ -1,6 +1,7 @@
 from RL.mdp.MDPBasis import MDPBasisClass
 from RL.mdp.MDPState import MDPStateClass
 from RL.mdp.GraphWorldConstants_hard import *
+from location import locations
 import random
 from collections import defaultdict
 import networkx as nx
@@ -12,7 +13,8 @@ class MDPGraphWorld(MDPBasisClass):
                  has_door_nodes=has_door_nodes_tuple,
                  door_open_nodes=door_open_nodes_dict,
                  door_id=door_id_dict,
-                 is_goal_terminal=True, success_rate=success_rate_dict1, step_cost=1.0, name="Graphworld"
+                 is_goal_terminal=True, success_rate=success_rate_dict1,
+                 step_cost=1.0, name="Graphworld"
                  ):
         self.node_num = node_num
         self.is_goal_terminal = is_goal_terminal
@@ -30,6 +32,7 @@ class MDPGraphWorld(MDPBasisClass):
         self.cur_state = self.nodes[self.init_node]
         self.G = self.set_graph()
         self.init_actions()
+        self.is_stack = False
         super().__init__(self.init_state, self.actions, self._transition_func, self._reward_func,
                          self.step_cost)
 
@@ -66,6 +69,13 @@ class MDPGraphWorld(MDPBasisClass):
             nodes[str(node)] = node
         return nodes
 
+    def get_action_cost(self, state, next_state):
+        x1 = locations[str(state)]["x"]
+        y1 = locations[str(state)]["y"]
+        x2 = locations[str(next_state)]["x"]
+        y2 = locations[str(next_state)]["y"]
+        return distance(x1, y1, x2, y2)
+
     # Setter
 
     def init_actions(self):
@@ -97,8 +107,6 @@ class MDPGraphWorld(MDPBasisClass):
             #             node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
             #             self.actions[node.get_state()].add((a, node.id))
         self.set_nodes()
-        # for s, a in self.actions.items():
-        #     print(s, a)
 
     def set_nodes(self):
         for i in self.success_rate:
@@ -160,6 +168,9 @@ class MDPGraphWorld(MDPBasisClass):
 
     # Core
 
+    def _is_goal_state(self, state):
+        return state.id in self.goal_nodes
+
     def _transition_func(self, state, action):
         """
         transition function. it returns next state
@@ -169,24 +180,30 @@ class MDPGraphWorld(MDPBasisClass):
         """
         self.G.nodes[state]['count'] += 1
 
-        # print(self.get_neighbor(state))
-
-        if state.is_terminal():
+        if state.is_terminal() or self.is_stack:
+            # if self.is_stack:
+            #     print("stack now")
             return state
 
-        if state.success_rate < random.random() and action[0] == "gothrough":
-            action = ("fail", action[1])
+        # print(self.get_neighbor(state))
+        rand = random.random()
+        if state.success_rate[0] < rand and not self._is_goal_state(state):
+            if action[0] == "gothrough":
+                action = ("fail", action[1])
 
-        if state.success_rate < random.random() and action[0] == "opendoor":
-            action = ("fail", action[1])
+            if action[0] == "opendoor":
+                action = ("fail", action[1])
 
-        if state.success_rate < random.random() and action[0] == "approach":
-            miss = random.choice(self.get_neighbor(state) + [state])
-            action = ("approach", miss.id)
+            if action[0] == "approach":
+                miss = random.choice(self.get_neighbor(state) + [state])
+                action = ("approach", miss.id)
 
-        if state.success_rate < random.random() and action[0] == "goto":
-            miss = random.choice(self.get_neighbor(state) + [state])
-            action = ("goto", miss.id)
+            if action[0] == "goto":
+                miss = random.choice(self.get_neighbor(state) + [state])
+                action = ("goto", miss.id)
+
+        if state.success_rate[0] + state.success_rate[1] < rand and not self._is_goal_state(state):
+            self.is_stack = True
 
         next_state = state
 
@@ -220,13 +237,16 @@ class MDPGraphWorld(MDPBasisClass):
         :param next_state: <State>
         :return: reward <float>
         """
-        if next_state.is_terminal():
-            return 10 - self.step_cost
+        if next_state.id in self.goal_nodes:
+            return 100
+        elif self.is_stack:
+            return -5
         else:
-            return 0 - self.step_cost
+            return 0 - self.get_action_cost(state, next_state)
 
     def reset(self):
         super().reset()
+        self.is_stack = False
         self.set_nodes()
         self.set_graph()
 
