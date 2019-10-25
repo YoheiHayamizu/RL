@@ -22,7 +22,7 @@ import copy
 sns.set()
 
 
-def run_episodes(mdp, method, step=50, episode=100):
+def run_episodes(mdp, method, step=50, episode=100, s=0):
     timestep_list = list()
     cumulative_reward_list = list()
     for e in range(episode):
@@ -33,6 +33,10 @@ def run_episodes(mdp, method, step=50, episode=100):
         state = mdp.get_cur_state()
         action = method.act(state)
         method.update(state, action, 0.0, learning=False)
+        # record agent's log every 250 episode
+        if e % 250 == 0:
+            method.q_to_csv(CSV_DIR + "qtable_{0}_{1}_{2}_{3}.csv".format(method.name, mdp.name, s, e))
+            agent_to_pickle(method, PKL_DIR + "{0}_{1}_{2}_{3}.pkl".format(method.name, mdp.name, s, e))
         for t in range(1, step):
             mdp, reward, done, info = mdp.step(action)
             cumulative_reward += reward
@@ -43,6 +47,7 @@ def run_episodes(mdp, method, step=50, episode=100):
                 break
         timestep_list.append(method.step_number)
         cumulative_reward_list.append(cumulative_reward)
+
     return timestep_list, cumulative_reward_list
 
 
@@ -60,7 +65,7 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
             tmp_mdp = copy.deepcopy(mdp)
             method.reset()
             print("-------- new seed: {0:02} starts --------".format(s))
-            timestep_list, cumulative_reward_list = run_episodes(tmp_mdp, method, step, episode)
+            timestep_list, cumulative_reward_list = run_episodes(tmp_mdp, method, step, episode, s)
             timestep_list_dict[str(method)][s] = timestep_list
             cumulative_reward_dict[str(method)][s] = cumulative_reward_list
 
