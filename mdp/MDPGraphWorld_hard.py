@@ -242,7 +242,7 @@ class MDPGraphWorld(MDPBasisClass):
         elif self.is_stack:
             return -5
         else:
-            return 0 - self.get_action_cost(state, next_state)
+            return 0 - self.get_action_cost(state, next_state) - self.step_cost
 
     def reset(self):
         super().reset()

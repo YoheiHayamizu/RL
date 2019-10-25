@@ -32,13 +32,14 @@ def run_episodes(mdp, method, step=50, episode=100):
         method.reset_of_episode()
         state = mdp.get_cur_state()
         action = method.act(state)
+        method.update(state, action, 0.0, learning=False)
         for t in range(1, step):
             mdp, reward, done, info = mdp.step(action)
             cumulative_reward += reward
             state = mdp.get_cur_state()
             action = method.act(state)
-            # method.update(state, action, reward)
-            if not done:
+            method.update(state, action, reward)
+            if done:
                 break
         timestep_list.append(method.step_number)
         cumulative_reward_list.append(cumulative_reward)
@@ -212,7 +213,7 @@ if __name__ == "__main__":
                               init_loc=(0, 0), goals_loc=[(4, 4)], walls_loc=[], holes_loc=[],
                               is_goal_terminal=True, is_rand_init=False,
                               slip_prob=0.5, step_cost=1.0, hole_cost=1.0,
-                              name="gridworld")
+                              name="gridworld_test")
     # graph_world = MDPGraphWorld(node_num=15, is_goal_terminal=True, step_cost=1.0,
     #                             success_rate=GraphConstant.success_rate_dict2)
 
@@ -226,6 +227,6 @@ if __name__ == "__main__":
 
     # methods = [qLearning, sarsa, rmax]
     # methods = [qLearning, sarsa]
-    methods = [qLearning, rmax]
+    methods = [qLearning]
 
     run_experiment(mdp, methods, step=100, seed=10, episode=300)
