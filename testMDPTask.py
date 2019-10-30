@@ -34,7 +34,9 @@ def run_episodes(mdp, method, step=50, episode=100, s=0):
         action = method.act(state)
         method.update(state, action, 0.0, learning=False)
         # record agent's log every 250 episode
-        if e % 250 == 0:
+        if e % 250 == 0 or e == 1:
+            with open(PKL_DIR + "mdp_{0}_{1}_{2}_{3}.pkl".format(method.name, mdp.name, s, e), "wb") as f:
+                dill.dump(mdp, f)
             method.q_to_csv(CSV_DIR + "qtable_{0}_{1}_{2}_{3}.csv".format(method.name, mdp.name, s, e))
             agent_to_pickle(method, PKL_DIR + "{0}_{1}_{2}_{3}.pkl".format(method.name, mdp.name, s, e))
         for t in range(1, step):

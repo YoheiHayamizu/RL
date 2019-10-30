@@ -238,7 +238,7 @@ class MDPGraphWorld(MDPBasisClass):
         :return: reward <float>
         """
         if next_state.id in self.goal_nodes:
-            return 100
+            return 1000
         elif self.is_stack:
             return -5
         else:
