@@ -26,7 +26,7 @@ def run_episodes(mdp, method, step=50, episode=100, s=0):
     timestep_list = list()
     cumulative_reward_list = list()
     for e in range(episode):
-        print("-------- new episode: {0:04} starts --------".format(e))
+        # print("-------- new episode: {0:04} starts --------".format(e))
         mdp.reset()
         cumulative_reward = 0.0
         method.reset_of_episode()
@@ -90,106 +90,24 @@ def run_experiment(mdp, methods, step=50, episode=100, seed=10):
         df_timestep.to_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(method.name, mdp.name))
         df_cumulative.to_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(method.name, mdp.name))
 
-    # plot and save timestep
-    step_plot = pd.DataFrame(timestep_list_dict)
-    step_plot_df = pd.DataFrame()
-    for m in step_plot.keys():
-        for s in step_plot[m].keys():
-            step_plot_df = episode_data_to_df(step_plot[m], step_plot_df, m, s,
-                                              columns=("Timestep", "episode", "seed", "method"))
-    save_figure(step_plot_df, FIG_DIR + "timesteps_{0}.png".format(mdp.name), loc='upper right', pos=(1, 1),
-                columns=("Timestep", "episode", "seed", "method"))
-
-    reward_plot = pd.DataFrame(cumulative_reward_dict)
-    reward_plot_df = pd.DataFrame()
-    for m in step_plot.keys():
-        for s in step_plot[m].keys():
-            reward_plot_df = episode_data_to_df(reward_plot[m], reward_plot_df, m, s,
-                                                columns=("Cumulative_Reward", "episode", "seed", "method"))
-    save_figure(reward_plot_df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc="lower right", pos=(1, 0),
-                columns=("Cumulative_Reward", "episode", "seed", "method"))
-
-
-def create_figure_timestep(methods, mdp):
-    merge_timestep(methods, mdp)
-    tmp = pd.read_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(methods[0].name, mdp.name))
-    for method in methods[1:]:
-        tmp = tmp.append(pd.read_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(method.name, mdp.name)))
-    df = pd.DataFrame(columns=("Timestep", "episode", "seed", "method"))
-    df["Timestep"] = tmp.iloc[:, 1]
-    df["episode"] = tmp.iloc[:, 2]
-    df["seed"] = tmp.iloc[:, 3]
-    df["method"] = tmp.iloc[:, 4]
-    save_figure(df, FIG_DIR + "timesteps_{0}.png".format(mdp.name), loc='upper right', pos=(1, 1),
-                columns=("Timestep", "episode", "seed", "method"))
-
-
-def merge_timestep(methods, mdp):
-    df = pd.DataFrame(columns=("Timestep", "episode", "seed", "method"))
-    for method in methods:
-        tmp = pd.read_csv(CSV_DIR + "timestep_{0}_{1}_{2}.csv".format(method.name, mdp.name, 9))
-        df = pd.DataFrame(columns=("Timestep", "episode", "seed", "method"))
-        for key in tmp.iloc[:, 1:].keys():
-            tmp_df = pd.DataFrame(columns=("Timestep", "episode", "seed", "method"))
-            tmp_df["episode"] = tmp["Unnamed: 0"]
-            tmp_df["seed"] = tmp.loc[:, key]
-            tmp_df["Timestep"] = window(tmp.loc[:, key], win=50)
-            tmp_df["method"] = method.name
-            df = df.append(tmp_df)
-        df.to_csv(CSV_DIR + "timesteps_{0}_{1}_all.csv".format(method.name, mdp.name))
-
-
-def create_figure_cumulative_reward(methods, mdp):
-    merge_cumulative_rewards(methods, mdp)
-    tmp = pd.read_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(methods[0].name, mdp.name))
-    for method in methods[1:]:
-        tmp = tmp.append(pd.read_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(method.name, mdp.name)))
-    df = pd.DataFrame(columns=("Cumulative_Reward", "episode", "seed", "method"))
-    df["Cumulative_Reward"] = tmp.iloc[:, 1]
-    df["episode"] = tmp.iloc[:, 2]
-    df["seed"] = tmp.iloc[:, 3]
-    df["method"] = tmp.iloc[:, 4]
-    save_figure(df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc="lower right", pos=(1, 0),
-                columns=("Cumulative_Reward", "episode", "seed", "method"))
-
-
-def merge_cumulative_rewards(methods, mdp):
-    df = pd.DataFrame(columns=("Cumulative_Reward", "episode", "seed", "method"))
-    for method in methods:
-        tmp = pd.read_csv(CSV_DIR + "cumulative_reward_{0}_{1}_{2}.csv".format(method.name, mdp.name, 9))
-        df = pd.DataFrame(columns=("Cumulative_Reward", "episode", "seed", "method"))
-        for key in tmp.iloc[:, 1:].keys():
-            tmp_df = pd.DataFrame(columns=("Cumulative_Reward", "episode", "seed", "method"))
-            tmp_df["episode"] = tmp["Unnamed: 0"]
-            tmp_df["seed"] = tmp.loc[:, key]
-            tmp_df["Cumulative_Reward"] = window(tmp.loc[:, key], win=50)
-            tmp_df["method"] = method.name
-            df = df.append(tmp_df)
-        df.to_csv(CSV_DIR + "cumulative_rewards_{0}_{1}_all.csv".format(method.name, mdp.name))
-
-
-def window(x, win=10):
-    tmp = np.array(range(len(x)), dtype=float)
-    counter = 0
-    while counter < len(x):
-        tmp[counter] = float(x[counter:counter + win].mean())
-        if len(x[counter:]) < win:
-            tmp[counter:] = float(x[counter:].mean())
-        counter += 1
-    return pd.Series(tmp)
-
-
-def save_figure(df, filename="figure.png", loc='upper right', pos=(1, 1),
-                columns=("Timestep", "episode", "seed", "method")):
-    fig, ax = plt.subplots()
-    sns.lineplot(x=columns[1], y=columns[0], hue="method", data=df, ax=ax)
-    # plt.title(filename)
-    handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles=handles[1:], labels=labels[1:], loc=4)
-    plt.legend(loc=loc, bbox_to_anchor=pos, ncol=1)
-    plt.savefig(filename)
-    del fig
-    del ax
+    # # plot and save timestep
+    # step_plot = pd.DataFrame(timestep_list_dict)
+    # step_plot_df = pd.DataFrame()
+    # for m in step_plot.keys():
+    #     for s in step_plot[m].keys():
+    #         step_plot_df = episode_data_to_df(step_plot[m], step_plot_df, m, s,
+    #                                           columns=("Timestep", "episode", "seed", "method"))
+    # save_figure(step_plot_df, FIG_DIR + "timesteps_{0}.png".format(mdp.name), loc='upper right', pos=(1, 1),
+    #             columns=("Timestep", "episode", "seed", "method"))
+    #
+    # reward_plot = pd.DataFrame(cumulative_reward_dict)
+    # reward_plot_df = pd.DataFrame()
+    # for m in step_plot.keys():
+    #     for s in step_plot[m].keys():
+    #         reward_plot_df = episode_data_to_df(reward_plot[m], reward_plot_df, m, s,
+    #                                             columns=("Cumulative_Reward", "episode", "seed", "method"))
+    # save_figure(reward_plot_df, FIG_DIR + "cumulative_rewards_{0}.png".format(mdp.name), loc="lower right", pos=(1, 0),
+    #             columns=("Cumulative_Reward", "episode", "seed", "method"))
 
 
 def episode_data_to_df(tmp, df, method, seed, columns=("Timestep", "episode", "seed", "method")):
