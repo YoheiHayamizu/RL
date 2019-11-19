@@ -26,7 +26,7 @@ def run_episodes(mdp, method, step=50, episode=100, s=0):
     timestep_list = list()
     cumulative_reward_list = list()
     for e in range(episode):
-        # print("-------- new episode: {0:04} starts --------".format(e))
+        print("-------- new episode: {0:04} starts --------".format(e))
         mdp.reset()
         cumulative_reward = 0.0
         method.reset_of_episode()
@@ -40,8 +40,10 @@ def run_episodes(mdp, method, step=50, episode=100, s=0):
             method.q_to_csv(CSV_DIR + "qtable_{0}_{1}_{2}_{3}.csv".format(method.name, mdp.name, s, e))
             agent_to_pickle(method, PKL_DIR + "{0}_{1}_{2}_{3}.pkl".format(method.name, mdp.name, s, e))
         for t in range(1, step):
+            # print(state.get_state(), action, end='')
             mdp, reward, done, info = mdp.step(action)
             cumulative_reward += reward
+            # print(reward)
             state = mdp.get_cur_state()
             action = method.act(state)
             method.update(state, action, reward)
