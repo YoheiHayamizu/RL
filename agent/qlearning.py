@@ -62,7 +62,7 @@ class QLearningAgent(AgentBasisClass):
 
             diff = self.gamma * self._get_max_q_val(state.get_state()) - self.get_q_val(pre_state, pre_action)
             self.Q[pre_state][pre_action] += self.alpha * (reward + diff)
-
+        # print(pre_state, pre_action, self.Q[pre_state][pre_action])
         self.set_pre_state(state.get_state())
         self.set_pre_action(action)
 
@@ -100,10 +100,3 @@ class QLearningAgent(AgentBasisClass):
         else:
             action = self._get_max_q_key(state.get_state())
         return action
-
-    def q_to_csv(self, filename=None):
-        if filename is None:
-            filename = "qtable_{0}.csv".format(self.name)
-        table = pd.DataFrame(self.Q, dtype=str)
-        table.to_csv(filename)
-

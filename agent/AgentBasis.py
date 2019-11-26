@@ -1,3 +1,5 @@
+import pandas as pd
+import dill
 
 
 class AgentBasisClass:
@@ -73,3 +75,11 @@ class AgentBasisClass:
         self.actions = self.init_actions
         self.pre_state = None
         self.pre_action = None
+
+    def q_to_csv(self, filename):
+        table = pd.DataFrame(self.Q, dtype=str)
+        table.to_csv(filename)
+
+    def to_pickle(self, filename):
+        with open(filename, "wb") as f:
+            dill.dump(self, f)
