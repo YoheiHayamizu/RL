@@ -1,5 +1,5 @@
 import copy
-
+import dill
 
 class MDPBasisClass(object):
     """ abstract class for a MDP """
@@ -76,3 +76,6 @@ class MDPBasisClass(object):
     def reset(self):
         self.cur_state = self.init_state
 
+    def to_pickle(self, filename):
+        with open(filename, "wb") as f:
+            dill.dump(self, f)
