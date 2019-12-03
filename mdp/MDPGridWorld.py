@@ -48,7 +48,8 @@ class MDPGridWorld(MDPBasisClass):
         else:
             self.grid = self.conv_grid()
         self.init_grid = copy.deepcopy(self.grid)
-        self.init_state = MDPGridWorldState(self.init_loc[0], self.init_loc[1])
+        self.states = [[MDPGridWorldState(x, y) for y in range(len(self.grid[x]))] for x in range(len(self.grid))]
+        self.init_state = self.states[self.init_loc[0]][self.init_loc[1]]
         self.cur_state = self.init_state
         self.is_goal_terminal = is_goal_terminal
         self.set_actions(ACTIONS)
@@ -85,6 +86,9 @@ class MDPGridWorld(MDPBasisClass):
     def get_hole_cost(self):
         return self.hole_cost
 
+    def get_goal_reward(self):
+        return self.goal_reward
+
     def get_goals_loc(self):
         return self.goals
 
@@ -93,6 +97,13 @@ class MDPGridWorld(MDPBasisClass):
 
     def get_doors_loc(self):
         return self.doors
+
+    def get_state(self, x, y):
+        return self.states[x][y]
+
+    def get_states(self):
+        flatten = lambda l: [item for sublist in l for item in sublist]
+        return flatten(self.states)
 
     def get_actions(self, state=None):
         if state is None:
@@ -175,15 +186,15 @@ class MDPGridWorld(MDPBasisClass):
         x, y = state.x, state.y
 
         if action == "up" and self.__is_allowed(x, y + 1) and not self.__is_wall(x, y + 1):
-            next_state = MDPGridWorldState(x, y + 1)
+            next_state = self.get_state(x, y + 1)
         elif action == "down" and self.__is_allowed(x, y - 1) and not self.__is_wall(x, y - 1):
-            next_state = MDPGridWorldState(x, y - 1)
+            next_state = self.get_state(x, y - 1)
         elif action == "left" and self.__is_allowed(x - 1, y) and not self.__is_wall(x - 1, y):
-            next_state = MDPGridWorldState(x - 1, y)
+            next_state = self.get_state(x - 1, y)
         elif action == "right" and self.__is_allowed(x + 1, y) and not self.__is_wall(x + 1, y):
-            next_state = MDPGridWorldState(x + 1, y)
+            next_state = self.get_state(x + 1, y)
         else:
-            next_state = MDPGridWorldState(x, y)
+            next_state = self.get_state(x, y)
         if (next_state.x, next_state.y) in self.goals + self.holes and self.is_goal_terminal:
             next_state.set_terminal(True)
         return next_state
@@ -218,11 +229,11 @@ class MDPGridWorld(MDPBasisClass):
         :return: reward <float>
         """
         if (next_state.x, next_state.y) in self.goals:
-            return self.goal_reward
+            return self.get_goal_reward()
         elif (next_state.x, next_state.y) in self.holes:
-            return -self.hole_cost
+            return -self.get_hole_cost()
         else:
-            return 0 - self.step_cost
+            return 0 - self.get_step_cost()
 
     def make_grid(self, grid_string):
         self.width, self.height = len(grid_string[0]), len(grid_string)
@@ -307,29 +318,6 @@ class MDPGridWorldState(MDPStateClass):
 
     def get_state(self):
         return self.__str__()
-
-
-def get_user_action(state, actionFunction):
-    """
-    Get an action from the user (rather than the agent).
-
-    Used for debugging and lecture demos.
-    """
-    import RL.mdp.DisplayUtils
-    action = None
-    while True:
-        keys = RL.mdp.DisplayUtils.wait_for_keys()
-        if 'Up' in keys: action = 'north'
-        if 'Down' in keys: action = 'south'
-        if 'Left' in keys: action = 'west'
-        if 'Right' in keys: action = 'east'
-        if 'q' in keys: sys.exit(0)
-        if action == None: continue
-        break
-    actions = actionFunction(state)
-    if action not in actions:
-        action = actions[0]
-    return action
 
 
 if __name__ == "__main__":
