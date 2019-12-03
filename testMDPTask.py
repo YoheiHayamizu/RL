@@ -113,17 +113,16 @@ def parseOptions():
                          metavar="L", help='TD learning rate (default %default)')
     optParser.add_option('-i', '--iterations', action='store',
                          type='int', dest='iters', default=50,
-                         metavar="K", help='Number of rounds of value iteration (default %default)')
+                         metavar="I", help='Number of rounds of value iteration (default %default)')
     optParser.add_option('-k', '--episodes', action='store',
                          type='int', dest='episodes', default=100,
                          metavar="K", help='Number of epsiodes of the MDP to run (default %default)')
-    optParser.add_option('-g', '--grid', action='store',
-                         metavar="G", type='string', dest='grid', default="BookGrid",
-                         help='Grid to use (case sensitive; options are BookGrid, BridgeGrid, CliffGrid, '
-                              'MazeGrid, default %default)')
+    optParser.add_option('-t', '--lookahead', action='store',
+                         type='int', dest='lookahead', default=10,
+                         metavar="T", help='Number of times of the planning to look ahead (default %default)')
     optParser.add_option('-a', '--agent', action='store', metavar="A",
                          type='string', dest='agent', default="q-learning",
-                         help='Agent type (options are \'q-learning\', \'sarsa\' and \'rmax\', default %default)')
+                         help='Agent type (options are \'q-learning\', \'sarsa\' and \'rmax\', \'dynaq\' default %default)')
     optParser.add_option('-p', '--pause', action='store_true',
                          dest='pause', default=False,
                          help='Pause GUI after each time step when running the MDP')
@@ -151,36 +150,6 @@ def parseOptions():
     return opts
 
 
-class User():
-    def __init__(self, actionFunction):
-        self.action = None
-        self.__func = actionFunction
-
-    def getUserAction(self, state):
-        """
-        Get an action from the user (rather than the agent).
-
-        Used for debugging and lecture demos.
-        """
-        from RL.mdp import DisplayUtils
-        self.action = None
-        while True:
-            keys = DisplayUtils.wait_for_keys()
-            if 'Up' in keys: self.action = 'up'
-            if 'Down' in keys: self.action = 'down'
-            if 'Left' in keys: self.action = 'left'
-            if 'Right' in keys: self.action = 'right'
-            if 'q' in keys: sys.exit(0)
-            if self.action == None: continue
-            break
-        actions = self.__func[state.get_state()]
-        if self.action not in actions:
-            self.action = actions[0]
-
-    def act(self, state):
-        self.getUserAction(state)
-        return self.action
-
 
 if __name__ == "__main__":
     import pathlib
@@ -192,6 +161,7 @@ if __name__ == "__main__":
     from RL.agent.qlearning import QLearningAgent
     from RL.agent.sarsa import SarsaAgent
     from RL.agent.rmax import RMAXAgent
+    from RL.agent.dynaq import DynaQAgent
     from RL.testConstants import *
 
     opts = parseOptions()
@@ -226,13 +196,15 @@ if __name__ == "__main__":
     ###########################
     # GET THE AGENT
     ###########################
-    qlearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=opts.alpha, gamma=opts.discount, epsilon=0.1, explore="uniform")
-    sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=opts.alpha, gamma=opts.discount, epsilon=0.1, explore="uniform")
-    rmax = RMAXAgent(mdp.get_actions(), name="RMAX", rmax=10, u_count=2, gamma=0.9, epsilon_one=0.99)
+    qlearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, explore="uniform")
+    sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, explore="uniform")
+    rmax = RMAXAgent(mdp.get_actions(), name="RMAX", rmax=10, u_count=2, gamma=opts.discount, epsilon_one=1-opts.epsilon)
+    dynaq = DynaQAgent(mdp.get_actions(), name="DynaQ", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, n=opts.lookahead, explore="uniform")
     agent = None
     if opts.agent == 'q-learning': agent = qlearning
     elif opts.agent == 'sarsa': agent = sarsa
     elif opts.agent == 'rmax': agent = rmax
+    elif opts.agent == 'dynaq': agent = dynaq
     
     # DISPLAY Q/V VALUES BEFORE SIMULATION OF EPISODES
     try:
