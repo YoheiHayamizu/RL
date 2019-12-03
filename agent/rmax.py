@@ -35,6 +35,12 @@ class RMAXAgent(AgentBasisClass):
     def get_q_val(self, state, action):
         return self.Q[state][action]
 
+    def get_policy(self, state):
+        return self._get_max_q_key(state)
+
+    def get_value(self, state):
+        return self._get_max_q_val(state)
+
     def get_reward(self, state, action):
         if self.get_count(state, action) >= self.u_count:
             # print(float(sum(self.rewards[state][action])) / self.get_count(state, action))
@@ -71,7 +77,7 @@ class RMAXAgent(AgentBasisClass):
         pre_state = self.get_pre_state()
         pre_action = self.get_pre_action()
 
-        if learning:
+        if learning and reward is not None:
             if pre_state is None and pre_action is None:
                 self.set_pre_state(state.get_state())
                 self.set_pre_action(action)
@@ -96,12 +102,6 @@ class RMAXAgent(AgentBasisClass):
                     self.Q[s][a] = self.get_reward(s, a) + self.gamma * \
                                    sum([self.get_transition(s, a, sp) * self._get_max_q_val(sp) for sp in
                                         self.Q.keys()])
-            # for s in self.C_sa.keys():
-            #     for a in self.C_sa[s].keys():
-            #         if self.get_count(s, a) >= self.u_count:
-            #             self.Q[s][a] = self.get_reward(s, a) + self.gamma * \
-            #                            sum([(self.get_transition(s, a, sp) * self._get_max_q_val(sp))
-            #                                 for sp in self.Q.keys()])
 
     def reset(self):
         self.u_count = self.init_urate

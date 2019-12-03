@@ -31,6 +31,12 @@ class SarsaAgent(AgentBasisClass):
     def get_q_val(self, state, action):
         return self.Q[state][action]
 
+    def get_policy(self, state):
+        return self._get_max_q_key(state)
+
+    def get_value(self, state):
+        return self._get_max_q_val(state)
+
         # Setters
 
     def set_alpha(self, new_alpha):
@@ -55,7 +61,7 @@ class SarsaAgent(AgentBasisClass):
     def update(self, state, action, reward, learning=True):
         pre_state = self.get_pre_state()
         pre_action = self.get_pre_action()
-        if learning:
+        if learning and reward is not None:
             if pre_state is None:
                 self.set_pre_state(state.get_state())
                 self.set_pre_action(action)

@@ -30,6 +30,12 @@ class QLearningAgent(AgentBasisClass):
     def get_q_val(self, state, action):
         return self.Q[state][action]
 
+    def get_policy(self, state):
+        return self._get_max_q_key(state)
+
+    def get_value(self, state):
+        return self._get_max_q_val(state)
+
     # Setters
 
     def set_alpha(self, new_alpha):

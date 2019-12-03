@@ -35,6 +35,12 @@ class DynaQAgent(AgentBasisClass):
     def get_q_val(self, state, action):
         return self.Q[state][action]
 
+    def get_policy(self, state):
+        return self._get_max_q_key(state)
+
+    def get_value(self, state):
+        return self._get_max_q_val(state)
+
     def get_reward(self, state, action):
         if self.get_count(state, action) == 0:
             return 0.0
@@ -69,7 +75,7 @@ class DynaQAgent(AgentBasisClass):
         pre_state = self.get_pre_state()
         pre_action = self.get_pre_action()
 
-        if learning:
+        if learning and reward is not None:
             if pre_state is None and pre_action is None:
                 self.set_pre_state(state.get_state())
                 self.set_pre_action(action)
