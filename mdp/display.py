@@ -17,6 +17,36 @@ from collections import defaultdict
 from RL.mdp.DisplayUtils import *
 
 
+class User():
+    def __init__(self, actionFunction):
+        self.action = None
+        self.__func = actionFunction
+
+    def getUserAction(self, state):
+        """
+        Get an action from the user (rather than the agent).
+
+        Used for debugging and lecture demos.
+        """
+        from RL.mdp import DisplayUtils
+        self.action = None
+        while True:
+            keys = DisplayUtils.wait_for_keys()
+            if 'Up' in keys: self.action = 'up'
+            if 'Down' in keys: self.action = 'down'
+            if 'Left' in keys: self.action = 'left'
+            if 'Right' in keys: self.action = 'right'
+            if 'q' in keys: sys.exit(0)
+            if self.action == None: continue
+            break
+        actions = self.__func[state.get_state()]
+        if self.action not in actions:
+            self.action = actions[0]
+
+    def act(self, state):
+        self.getUserAction(state)
+        return self.action
+
 class GraphicsGridworldDisplay:
 
     def __init__(self, gridworld, size=120, speed=1.0):
