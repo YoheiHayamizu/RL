@@ -88,24 +88,6 @@ class MDPGraphWorld(MDPBasisClass):
                     self.actions[node.get_state()].add((a, n))
                     node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
                     self.actions[node.get_state()].add((a, n))
-            # for a in ACTIONS:
-            #     if a == "goto":
-            #         for n in neighbor_id + [node.id]:
-            #             if not self.nodes[n].has_door():
-            #                 self.actions[node.get_state()].add((a, n))
-            #                 node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-            #                 self.actions[node.get_state()].add((a, n))
-            #     elif a == "approach":
-            #         for n in neighbor_id + [node.id]:
-            #             if self.nodes[n].has_door():
-            #                 self.actions[node.get_state()].add((a, n))
-            #                 node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-            #                 self.actions[node.get_state()].add((a, n))
-            #     else:
-            #         if node.has_door():
-            #             self.actions[node.get_state()].add((a, node.id))
-            #             node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-            #             self.actions[node.get_state()].add((a, node.id))
         self.set_nodes()
 
     def set_nodes(self):
