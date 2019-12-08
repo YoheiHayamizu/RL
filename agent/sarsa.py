@@ -58,7 +58,7 @@ class SarsaAgent(AgentBasisClass):
 
         return action
 
-    def update(self, state, action, reward, learning=True):
+    def update(self, state, action, reward, learning=True, **kwargs):
         pre_state = self.get_pre_state()
         pre_action = self.get_pre_action()
         if learning and reward is not None:
