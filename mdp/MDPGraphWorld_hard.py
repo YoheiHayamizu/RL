@@ -1,6 +1,6 @@
 from RL.mdp.MDPBasis import MDPBasisClass
 from RL.mdp.MDPState import MDPStateClass
-from RL.mdp.GraphWorldConstants_hard import *
+import RL.mdp.GraphWorldConstants_hard as const
 from location import locations
 import random
 from collections import defaultdict
@@ -8,33 +8,53 @@ import networkx as nx
 
 
 class MDPGraphWorld(MDPBasisClass):
-    def __init__(self, node_num=26, init_node=0,
-                 goal_nodes=goal_nodes_tuple,
-                 has_door_nodes=has_door_nodes_tuple,
-                 door_open_nodes=door_open_nodes_dict,
-                 door_id=door_id_dict,
-                 is_goal_terminal=True, success_rate=success_rate_dict1,
-                 step_cost=1.0, name="Graphworld"
+    def __init__(self,
+                 node_num=const.node_num,
+                 init_node=0,
+                 goal_node=14,
+                 start_nodes=const.start_nodes,
+                 goal_nodes=const.goal_nodes,
+                 has_door_nodes=const.has_door_nodes_tuple,
+                 door_open_nodes=const.door_open_nodes_dict,
+                 door_id=const.door_id_dict,
+                 success_rate=const.success_rate_dict0,
+                 step_cost=1.0,
+                 goal_reward=const.goal_reward,
+                 stack_cost=const.stack_cost,
+                 is_goal_terminal=True,
+                 is_rand_init=False,
+                 is_rand_goal=False,
+                 name="Graphworld"
                  ):
         self.node_num = node_num
-        self.is_goal_terminal = is_goal_terminal
+        self.nodes = [MDPGraphWorldNode(i, is_terminal=False) for i in range(self.node_num)]
         self.success_rate = success_rate
-        self.goal_nodes = goal_nodes
+        self.door_id = door_id
         self.has_door_nodes = has_door_nodes
         self.door_open_nodes = door_open_nodes
-        self.door_id = door_id
-        self.step_cost = step_cost
-        self.name = name
+        self.is_goal_terminal = is_goal_terminal
+
+        self.start_states = start_nodes
+        self.goal_states = goal_nodes
         self.init_node = init_node
-        self.nodes = [MDPGraphWorldNode(i, is_terminal=False) for i in range(self.node_num)]
+        self.goal_node = goal_node
+        self.is_rand_init = is_rand_init
+        self.is_rand_goal = is_rand_goal
+        self.set_rand_init()
+        self.set_rand_goal()
+
         self.set_nodes()
-        self.init_state = self.nodes[self.init_node]
-        self.cur_state = self.nodes[self.init_node]
         self.G = self.set_graph()
+
+        self.init_state = self.nodes[self.init_node]
+        self.goal_query = str(self.nodes[self.goal_node])
+        self.cur_state = self.init_state
         self.init_actions()
         self.is_stack = False
-        super().__init__(self.init_state, self.actions, self._transition_func, self._reward_func,
-                         self.step_cost)
+        self.goal_reward = goal_reward
+        self.stack_cost = stack_cost
+        self.name = name
+        super().__init__(self.init_state, self.actions, self._transition_func, self._reward_func, step_cost)
 
     def __str__(self):
         return self.name + "_n-" + str(self.node_num)
@@ -48,7 +68,9 @@ class MDPGraphWorld(MDPBasisClass):
         get_params = super().get_params()
         get_params["node_num"] = self.node_num
         get_params["init_state"] = self.init_state
-        get_params["goal_nodes"] = self.goal_nodes
+        get_params["goal_query"] = self.goal_query
+        get_params["goal_states"] = self.goal_states
+        get_params["start_states"] = self.start_states
         get_params["has_door_nodes"] = self.has_door_nodes
         get_params["cur_state"] = self.cur_state
         get_params["is_goal_terminal"] = self.is_goal_terminal
@@ -74,7 +96,17 @@ class MDPGraphWorld(MDPBasisClass):
         y1 = locations[str(state)]["y"]
         x2 = locations[str(next_state)]["x"]
         y2 = locations[str(next_state)]["y"]
-        return distance(x1, y1, x2, y2)
+        return const.distance(x1, y1, x2, y2)
+
+    def get_visited(self, state):
+        return self.G.nodes[state]['count']
+
+    def get_stack_cost(self):
+        return self.stack_cost
+
+    def get_goal_reward(self):
+        return self.goal_reward
+
 
     # Setter
 
@@ -83,66 +115,91 @@ class MDPGraphWorld(MDPBasisClass):
         for node in self.nodes:
             neighbor = self.get_neighbor(node)
             neighbor_id = [node.id for node in neighbor]
-            for a in ACTIONS:
-                for n in neighbor_id + [node.id]:
-                    self.actions[node.get_state()].add((a, n))
-                    node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-                    self.actions[node.get_state()].add((a, n))
-        self.set_nodes()
+            for a in const.ACTIONS:
+                if a == 'approach':
+                    for n in neighbor_id:
+                        if self.nodes[n].has_door() and self.nodes[node.id].has_door() and self.door_id[node.id] != \
+                                self.door_id[n]:
+                            self.actions[node.get_state()].add((a, n))
+                            node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+                            self.actions[node.get_state()].add((a, n))
+                            self.set_nodes()
+                        elif self.nodes[n].has_door() and not self.nodes[node.id].has_door():
+                            self.actions[node.get_state()].add((a, n))
+                            node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+                            self.actions[node.get_state()].add((a, n))
+                            self.set_nodes()
+                if a == 'goto':
+                    for n in neighbor_id:
+                        if not self.nodes[n].has_door():
+                            self.actions[node.get_state()].add((a, n))
+                            node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+                            self.actions[node.get_state()].add((a, n))
+                            self.set_nodes()
+                if a == 'opendoor':
+                    if self.nodes[node.id].has_door():
+                        self.actions[node.get_state()].add((a, node.id))
+                        node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+                        self.actions[node.get_state()].add((a, node.id))
+                        self.set_nodes()
+                if a == 'gothrough':
+                    if self.nodes[node.id].has_door():
+                        self.actions[node.get_state()].add((a, node.id))
+                        node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+                        self.actions[node.get_state()].add((a, node.id))
+                        self.set_nodes()
+        # for action in self.actions.keys():
+        #     print(action, self.actions[action])
+
+    def set_rand_init(self):
+        if self.is_rand_init:
+            self.init_node = random.choice(self.start_states)
+        self.init_state = self.nodes[self.init_node]
+
+    def set_rand_goal(self):
+        if self.is_rand_goal:
+            self.goal_node = random.choice(self.goal_states)
+        self.goal_query = str(self.nodes[self.goal_node])
 
     def set_nodes(self):
         for i in self.success_rate:
             self.nodes[i].set_slip_prob(self.success_rate[i])
         for i in self.has_door_nodes:
             self.nodes[i].set_door(True, self.door_id[i], self.door_open_nodes[i])
+            # print(self.nodes[i].get_state())
 
         if self.is_goal_terminal:
-            for i in self.goal_nodes:
-                self.nodes[i].set_terminal(True)
+            self.nodes[self.goal_node].set_terminal(True)
 
     def set_graph(self):
         node = self.nodes
         graph_dist = {node[0]: [node[1], node[2]],
                       node[1]: [node[0], node[2], node[3]],
                       node[2]: [node[0], node[1], node[4]],
-                      node[3]: [node[1], node[4], node[5], node[6], node[7], node[8], node[10], node[11], node[17],
-                                node[20], node[21], node[22], node[23], node[24], node[25]],
-                      node[4]: [node[2], node[3], node[5], node[6], node[7], node[8], node[10], node[11], node[17],
-                                node[20], node[21], node[22], node[23], node[24], node[25]],
-                      node[5]: [node[3], node[4], node[6], node[7], node[8], node[10], node[11], node[17], node[20],
-                                node[21], node[22], node[23], node[24], node[25]],
-                      node[6]: [node[3], node[4], node[5], node[7], node[8], node[10], node[11], node[17], node[20],
-                                node[21], node[22], node[23], node[24], node[25]],
-                      node[7]: [node[3], node[4], node[5], node[6], node[8], node[10], node[11], node[17], node[20],
-                                node[21], node[22], node[23], node[24], node[25]],
-                      node[8]: [node[9], node[3], node[4], node[5], node[6], node[7], node[10], node[11], node[17],
-                                node[20], node[21], node[22], node[23], node[24], node[25]],
-                      node[9]: [node[8], node[12], node[13], node[14], node[15], node[16], node[18], node[19]],
-                      node[10]: [node[3], node[4], node[5], node[6], node[7], node[8], node[11], node[17], node[20],
-                                 node[21], node[22], node[23], node[24], node[25]],
-                      node[11]: [node[12], node[3], node[4], node[5], node[6], node[7], node[8], node[10], node[17],
-                                 node[20], node[21], node[22], node[23], node[24], node[25]],
-                      node[12]: [node[11], node[9], node[13], node[14], node[15], node[16], node[18], node[19]],
-                      node[13]: [node[9], node[12], node[14], node[15], node[16], node[18], node[19]],
-                      node[14]: [node[9], node[12], node[13], node[15], node[16], node[18], node[19]],
-                      node[15]: [node[9], node[12], node[13], node[14], node[16], node[18], node[19]],
-                      node[16]: [node[17], node[9], node[12], node[13], node[14], node[15], node[18], node[19]],
-                      node[17]: [node[16], node[3], node[4], node[5], node[6], node[7], node[8], node[10], node[11],
-                                 node[20], node[21], node[22], node[23], node[24], node[25]],
-                      node[18]: [node[9], node[12], node[13], node[14], node[15], node[16], node[19]],
-                      node[19]: [node[20], node[9], node[12], node[13], node[14], node[15], node[16], node[18]],
-                      node[20]: [node[19], node[3], node[4], node[5], node[6], node[7], node[8], node[10], node[11],
-                                 node[17], node[21], node[22], node[23], node[24], node[25]],
-                      node[21]: [node[3], node[4], node[5], node[6], node[7], node[8], node[10], node[11], node[17],
-                                 node[20], node[22], node[23], node[24], node[25]],
-                      node[22]: [node[3], node[4], node[5], node[6], node[7], node[8], node[10], node[11], node[17],
-                                 node[20], node[21], node[23], node[24], node[25]],
-                      node[23]: [node[3], node[4], node[5], node[6], node[7], node[8], node[10], node[11], node[17],
-                                 node[20], node[21], node[22], node[24], node[25]],
-                      node[24]: [node[3], node[4], node[5], node[6], node[7], node[8], node[10], node[11], node[17],
-                                 node[20], node[21], node[22], node[23], node[25]],
-                      node[25]: [node[3], node[4], node[5], node[6], node[7], node[8], node[10], node[11], node[17],
-                                 node[20], node[21], node[22], node[23], node[24]]}
+                      node[3]: [node[1], node[5], node[10]],
+                      node[4]: [node[2], node[6], node[7]],
+                      node[5]: [node[3], node[6]],
+                      node[6]: [node[4], node[5]],
+                      node[7]: [node[4], node[8], node[25]],
+                      node[8]: [node[9], node[7]],
+                      node[9]: [node[8], node[13], node[14], node[15]],
+                      node[10]: [node[3], node[11]],
+                      node[11]: [node[12], node[10]],
+                      node[12]: [node[11], node[13]],
+                      node[13]: [node[9], node[12], node[14]],
+                      node[14]: [node[9], node[13], node[15]],
+                      node[15]: [node[9], node[14], node[16], node[18]],
+                      node[16]: [node[17], node[15], node[18]],
+                      node[17]: [node[16], node[23], node[24]],
+                      node[18]: [node[15], node[16], node[19]],
+                      node[19]: [node[20], node[18]],
+                      node[20]: [node[19], node[21]],
+                      node[21]: [node[20], node[22]],
+                      node[22]: [node[21], node[23]],
+                      node[23]: [node[22], node[17]],
+                      node[24]: [node[17], node[25]],
+                      node[25]: [node[24], node[26]],
+                      node[26]: [node[7], node[25]]}
 
         G = nx.Graph(graph_dist)
         nx.set_node_attributes(G, 0, "count")
@@ -151,7 +208,7 @@ class MDPGraphWorld(MDPBasisClass):
     # Core
 
     def _is_goal_state(self, state):
-        return state.id in self.goal_nodes
+        return state.id == self.goal_node
 
     def _transition_func(self, state, action):
         """
@@ -184,13 +241,10 @@ class MDPGraphWorld(MDPBasisClass):
                 miss = random.choice(self.get_neighbor(state) + [state])
                 action = ("goto", miss.id)
 
-        if state.success_rate[0] + state.success_rate[1] < rand and not self._is_goal_state(state):
-            self.is_stack = True
-
         next_state = state
 
         if action[0] == "opendoor" and state == self.nodes[action[1]] and state.has_door():
-            state.set_door(state.has_door(), state.get_door_id(), True)  # TODO: ドアを開けたら対応するドアも開けるようにする
+            state.set_door(state.has_door(), state.get_door_id(), True)
             next_state = state
         elif action[0] == "gothrough" and state.has_door() and state.door_open():
             for node in self.get_neighbor(state):
@@ -207,7 +261,10 @@ class MDPGraphWorld(MDPBasisClass):
             next_state = state
             action = ("fail", action[1])
 
-        # print(action)
+        # print("current goal is {0}".format(self.goal_query))
+        if next_state.success_rate[0] + next_state.success_rate[1] < rand and not self._is_goal_state(next_state):
+            self.is_stack = True
+            next_state.set_terminal()
 
         return next_state
 
@@ -219,18 +276,22 @@ class MDPGraphWorld(MDPBasisClass):
         :param next_state: <State>
         :return: reward <float>
         """
-        if next_state.id in self.goal_nodes:
-            return 1000
+        if self._is_goal_state(next_state):
+            return self.get_goal_reward()
         elif self.is_stack:
-            return -5
+            return -self.get_stack_cost()
         else:
-            return 0 - self.get_action_cost(state, next_state) - self.step_cost
+            # return 0 - self.get_action_cost(state, next_state) - self.step_cost
+            return 0 - self.step_cost
 
     def reset(self):
-        super().reset()
+        self.cur_state.set_terminal(False)
+        self.set_rand_init()
+        self.set_rand_goal()
         self.is_stack = False
         self.set_nodes()
         self.set_graph()
+        super().reset()
 
     def print_graph(self):
         import matplotlib.pyplot as plt
@@ -330,7 +391,7 @@ class MDPGraphWorldNode(MDPStateClass):
 
 
 if __name__ == "__main__":
-    Graph_world = MDPGraphWorld()
+    Graph_world = MDPGraphWorld(is_rand_init=True)
     Graph_world.reset()
     observation = Graph_world
     # Graph_world.print_graph()
@@ -339,9 +400,12 @@ if __name__ == "__main__":
         # print(observation.get_cur_state().get_state())
         # print(Graph_world.get_actions(observation.get_cur_state().get_state()))
         random_action = (random.choice(list(Graph_world.get_actions(observation.get_cur_state().get_state()))))
-        print(observation.get_cur_state().get_state(), random_action)
+        print(observation.get_cur_state().get_state(), random_action, end=" ")
         observation, reward, done, info = Graph_world.step(random_action)
+        print(observation.get_cur_state().get_state())
+        print(observation.get_cur_state().is_terminal(), done)
         # print(observation.get_params())
         if done:
             print("Goal!")
+            print(observation.get_params())
             break
