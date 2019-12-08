@@ -7,10 +7,10 @@ import itertools
 
 
 class RMAXAgent(AgentBasisClass):
-    def __init__(self, actions, name="RMAXAgent", rmax=1.0, u_count=2, gamma=0.99, epsilon_one=0.1):
+    def __init__(self, actions, name="RMAXAgent", rmax=1.0, u_count=2, gamma=0.99, epsilon=0.1):
         super().__init__(name, actions, gamma)
         self.u_count, self.init_urate = u_count, u_count
-        self.epsilon_one, self.init_epsilon_one = epsilon_one, epsilon_one
+        self.epsilon_one, self.init_epsilon_one = epsilon, epsilon
         self.rmax, self.init_rmax = rmax, rmax
 
         self.Q = defaultdict(lambda: defaultdict(lambda: self.rmax))

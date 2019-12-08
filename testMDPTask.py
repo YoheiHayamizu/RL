@@ -204,7 +204,7 @@ if __name__ == "__main__":
     ###########################
     qlearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, explore="uniform")
     sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, explore="uniform")
-    rmax = RMAXAgent(mdp.get_actions(), name="RMAX", rmax=1, u_count=2, gamma=opts.discount, epsilon_one=opts.epsilon)
+    rmax = RMAXAgent(mdp.get_actions(), name="RMAX", rmax=1, u_count=2, gamma=opts.discount, epsilon=opts.epsilon)
     dynaq = DynaQAgent(mdp.get_actions(), name="DynaQ", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, n=opts.lookahead, explore="uniform")
     agent = None
     if opts.agent == 'q-learning': agent = qlearning
