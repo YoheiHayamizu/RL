@@ -4,6 +4,14 @@ import dill
 
 class AgentBasisClass:
     def __init__(self, name, actions, gamma=0.99):
+
+        self.alpha = None
+        self.gamma = None
+        self.epsilon = None
+        self.rmax = None
+        self.u_count = None
+        self.lookahead = None
+        
         self.name = name
         self.actions = actions
         self.init_actions = self.actions
