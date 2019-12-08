@@ -154,7 +154,12 @@ def drawValues(gridworld, values, policy, currentState=None, message='State Valu
                 drawSquare(x, y, 0, 0, 0, None, None, True, False, isCurrent)
             else:
                 if isExit:
-                    value = gridworld.get_goal_reward()
+                    if (x, y) == gridworld.goal_loc:
+                        value = gridworld.get_goal_reward()
+                    elif (x, y) in gridworld.holes:
+                        value =  -gridworld.get_hole_cost()
+                    else:
+                        value =  0 - gridworld.get_step_cost()
                     action = 'exit'
                     valString = '%.2f' % value
                     drawSquare(x, y, value, minValue, maxValue, valString, action, False, isExit, isCurrent)
@@ -200,10 +205,15 @@ def drawQValues(gridworld, qValues, currentState=None, message='State-Action Q-V
             if gridType == '#':
                 drawSquare(x, y, 0, 0, 0, None, None, True, False, isCurrent)
             elif isExit:
-                value = gridworld.get_goal_reward()
+                if (x, y) == gridworld.goal_loc:
+                    value = gridworld.get_goal_reward()
+                elif (x, y) in gridworld.holes:
+                    value =  -gridworld.get_hole_cost()
+                else:
+                    value =  0 - gridworld.get_step_cost()
                 action = 'exit'
                 valString = '%.2f' % value
-                print(type(value))
+                # print(type(value))
                 drawSquare(x, y, maxValue, minValue, maxValue, valString, action, False, isExit, isCurrent)
             else:
                 drawSquareQ(x, y, q, minValue, maxValue, valStrings, actions, isCurrent)

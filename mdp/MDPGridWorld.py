@@ -7,9 +7,9 @@ import copy
 
 
 class MDPGridWorld(MDPBasisClass):
-    def __init__(self, width=5, height=5,
-                 init_loc=(0, 0), goals_loc=((4, 4),), walls_loc=(), holes_loc=(), doors_loc=(),
-                 is_goal_terminal=True, is_rand_init=False, grid_string=None,
+    def __init__(self, width=5, height=5, init_loc=(0, 0), goal_loc=(4, 4),
+                 starts_loc=((0, 0), ), goals_loc=((4, 4),), walls_loc=(), holes_loc=(), doors_loc=(),
+                 is_goal_terminal=True, is_rand_init=False, is_rand_goal=False, grid_string=None,
                  slip_prob=0.0, step_cost=0.0, hole_cost=1.0, goal_reward=1, name="gridworld"
                  ):
         """
@@ -33,23 +33,26 @@ class MDPGridWorld(MDPBasisClass):
         self.width = width
         self.height = height
         self.goals = goals_loc
+        self.starts = starts_loc
         self.walls = walls_loc
         self.holes = holes_loc
         self.doors = doors_loc
         self.init_loc = init_loc
+        self.goal_loc = goal_loc
         self.slip_prob = slip_prob
         self.step_cost = step_cost
         self.hole_cost = hole_cost
         self.goal_reward = goal_reward
         self.is_rand_init = is_rand_init
-        self.set_rand_init()
-        if grid_string is not None:
-            self.grid = self.make_grid(grid_string)
-        else:
-            self.grid = self.conv_grid()
+        self.is_rand_goal = is_rand_goal
+        if grid_string is not None: self.grid = self.make_grid(grid_string)
+        else: self.grid = self.conv_grid()
         self.init_grid = copy.deepcopy(self.grid)
         self.states = [[MDPGridWorldState(x, y) for y in range(len(self.grid[x]))] for x in range(len(self.grid))]
         self.init_state = self.states[self.init_loc[0]][self.init_loc[1]]
+        self.goal_query = self.goal_loc
+        self.set_rand_init()
+        self.set_rand_goal()
         self.cur_state = self.init_state
         self.is_goal_terminal = is_goal_terminal
         self.set_actions(ACTIONS)
@@ -69,6 +72,7 @@ class MDPGridWorld(MDPBasisClass):
         get_params["width"] = self.width
         get_params["height"] = self.height
         get_params["init_state"] = self.init_state
+        get_params["goal_query"] = self.goal_query
         get_params["cur_state"] = self.cur_state
         get_params["goals"] = self.goals
         get_params["walls"] = self.walls
@@ -141,9 +145,18 @@ class MDPGridWorld(MDPBasisClass):
 
     def set_rand_init(self):
         if self.is_rand_init:
-            init_loc = random.randint(1, self.width), random.randint(1, self.height)
-            while init_loc in self.walls + self.goals + self.holes + self.doors:
-                init_loc = random.randint(1, self.width), random.randint(1, self.height)
+            self.init_loc = random.choice(self.starts)
+        self.init_state = self.states[self.init_loc[0]][self.init_loc[1]]
+
+    def set_rand_goal(self):
+        if self.is_rand_goal:
+            self.goal_loc = random.choice(self.goals)
+        self.goal_query = self.goal_loc
+        print("New goal is {0}".format(str(self.goal_query)))
+        # if self.is_rand_init:
+        #     init_loc = random.randint(1, self.width), random.randint(1, self.height)
+        #     while init_loc in self.walls + self.goals + self.holes + self.doors:
+        #         init_loc = random.randint(1, self.width), random.randint(1, self.height)
 
     def add_goals_loc(self, new_goal_loc):
         self.goals.append(new_goal_loc)
@@ -161,6 +174,10 @@ class MDPGridWorld(MDPBasisClass):
     # Core
 
     def reset(self):
+        # print(self.cur_state)
+        self.cur_state.set_terminal(False)
+        self.set_rand_init()
+        self.set_rand_goal()
         super().reset()
 
     def _transition_func(self, state, action):
@@ -195,7 +212,8 @@ class MDPGridWorld(MDPBasisClass):
             next_state = self.get_state(x + 1, y)
         else:
             next_state = self.get_state(x, y)
-        if (next_state.x, next_state.y) in self.goals + self.holes and self.is_goal_terminal:
+        # print("current goal is {0}".format(self.goal_loc))
+        if ((next_state.x, next_state.y) in self.holes or (next_state.x, next_state.y) == self.goal_loc) and self.is_goal_terminal:
             next_state.set_terminal(True)
         return next_state
 
@@ -228,7 +246,7 @@ class MDPGridWorld(MDPBasisClass):
         :param next_state: <State>
         :return: reward <float>
         """
-        if (next_state.x, next_state.y) in self.goals:
+        if (next_state.x, next_state.y) == self.goal_loc:
             return self.get_goal_reward()
         elif (next_state.x, next_state.y) in self.holes:
             return -self.get_hole_cost()
@@ -325,9 +343,9 @@ if __name__ == "__main__":
     # GET THE GRIDWORLD
     ###########################
     width, height = 5, 5
-    goals_loc = ((4, 4), )
+    goals_loc = ((3, 4), )
     holes_loc = ((1, 1), )
-    env = MDPGridWorld(width, height, goals_loc=goals_loc, holes_loc=holes_loc, grid_string=get_maze_grid())
+    env = MDPGridWorld(width, height, goal_loc=(3, 4), goals_loc=goals_loc, holes_loc=holes_loc, grid_string=get_maze_grid())
     env.reset()
     observation = env
     print(observation.get_cur_state())
