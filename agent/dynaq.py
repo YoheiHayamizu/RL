@@ -6,13 +6,21 @@ import random
 
 
 class DynaQAgent(AgentBasisClass):
-    def __init__(self, actions, name="DynaQAgent", alpha=0.1, gamma=0.99, epsilon=0.1, n=30, explore="uniform"):
+    def __init__(self,
+                 actions,
+                 name="DynaQAgent",
+                 alpha=0.1,
+                 gamma=0.99,
+                 epsilon=0.1,
+                 lookahead=30,
+                 explore="uniform",
+                 **kwargs):
         super().__init__(name, actions, gamma)
 
         self.alpha, self.init_alpha = alpha, alpha
         self.epsilon, self.init_epsilon = epsilon, epsilon
         self.explore = explore
-        self.n = n
+        self.lookahead = lookahead
 
         self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
         self.V = defaultdict(lambda: 0.0)
@@ -90,7 +98,7 @@ class DynaQAgent(AgentBasisClass):
             self.Q[pre_state][pre_action] += self.alpha * (reward + diff)
 
             # simulated experience
-            for n in range(self.n):
+            for n in range(self.lookahead):
                 s = random.choice(list(self.C_sas.keys()))
                 a = random.choice(list(self.C_sas[s].keys()))
                 r = self.get_reward(s, a)

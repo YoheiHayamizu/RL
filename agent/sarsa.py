@@ -6,7 +6,14 @@ import random
 
 
 class SarsaAgent(AgentBasisClass):
-    def __init__(self, actions, name="SarsaAgent", alpha=0.5, gamma=0.99, epsilon=0.1, explore="uniform"):
+    def __init__(self,
+                 actions,
+                 name="SarsaAgent",
+                 alpha=0.5,
+                 gamma=0.99,
+                 epsilon=0.1,
+                 explore="uniform",
+                 **kwargs):
         super().__init__(name, actions, gamma)
         self.alpha, self.init_alpha = alpha, alpha
         self.epsilon, self.init_epsilon = epsilon, epsilon

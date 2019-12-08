@@ -7,7 +7,14 @@ import itertools
 
 
 class RMAXAgent(AgentBasisClass):
-    def __init__(self, actions, name="RMAXAgent", rmax=1.0, u_count=2, gamma=0.99, epsilon=0.1):
+    def __init__(self,
+                 actions,
+                 name="RMAXAgent",
+                 rmax=1.0,
+                 u_count=2,
+                 gamma=0.99,
+                 epsilon=0.1,
+                 **kwargs):
         super().__init__(name, actions, gamma)
         self.u_count, self.init_urate = u_count, u_count
         self.epsilon, self.init_epsilon = epsilon, epsilon
