@@ -10,7 +10,7 @@ class RMAXAgent(AgentBasisClass):
     def __init__(self, actions, name="RMAXAgent", rmax=1.0, u_count=2, gamma=0.99, epsilon=0.1):
         super().__init__(name, actions, gamma)
         self.u_count, self.init_urate = u_count, u_count
-        self.epsilon_one, self.init_epsilon_one = epsilon, epsilon
+        self.epsilon, self.init_epsilon = epsilon, epsilon
         self.rmax, self.init_rmax = rmax, rmax
 
         self.Q = defaultdict(lambda: defaultdict(lambda: self.rmax))
@@ -94,7 +94,7 @@ class RMAXAgent(AgentBasisClass):
         self.set_pre_action(action)
 
     def _update_policy_iteration(self):
-        lim = int(np.log(1 / (self.epsilon_one * (1 - self.gamma))) / (1 - self.gamma))
+        lim = int(np.log(1 / (self.epsilon * (1 - self.gamma))) / (1 - self.gamma))
         tmp = list(map(lambda x: itertools.product(self.C_sa.keys(), self.C_sa[x].keys()), self.C_sa.keys())) * lim
         for l in range(0, lim):
             for s, a in tmp[l]:
@@ -105,7 +105,7 @@ class RMAXAgent(AgentBasisClass):
 
     def reset(self):
         self.u_count = self.init_urate
-        self.epsilon_one = self.init_epsilon_one
+        self.epsilon = self.init_epsilon
         self.episode_number = 0
         self.Q = defaultdict(lambda: defaultdict(lambda: self.rmax))
         self.C_sa = defaultdict(lambda: defaultdict(lambda: 0))
