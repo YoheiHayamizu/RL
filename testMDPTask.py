@@ -18,7 +18,7 @@ def run_episodes(_mdp, _agent, step=50, episode=100, s=0, decision_cb=None, disp
     if decision_cb is None: decision_cb = _agent
     df_list = list()
     for e in range(episode):
-        print("-------- new episode: {0:04} starts --------".format(e))
+        # print("-------- new episode: {0:04} starts --------".format(e))
         # INIT ENV AND AGENT
         _mdp.reset()
         _agent.reset_of_episode()
@@ -53,7 +53,7 @@ def run_episodes(_mdp, _agent, step=50, episode=100, s=0, decision_cb=None, disp
             action = decision_cb.act(state)
 
             # UPDATE LEARNER
-            _agent.update(state, action, reward)
+            _agent.update(state, action, reward, episode=e)
 
             # END IF DONE
             if done:
@@ -68,8 +68,8 @@ def run_episodes(_mdp, _agent, step=50, episode=100, s=0, decision_cb=None, disp
         #     _mdp.to_pickle(PKL_DIR + "mdp_{0}_{1}_{2}_{3}.pkl".format(_agent.name, _mdp.name, s, e))
         #     _agent.to_pickle(PKL_DIR + "{0}_{1}_{2}_{3}.pkl".format(_agent.name, _mdp.name, s, e))
         #     _agent.q_to_csv(CSV_DIR + "q_{0}_{1}_{2}_{3}.csv".format(_agent.name, _mdp.name, s, e))
-        df_list.append([e, _agent.step_number, cumulative_reward, s, _agent.name, _mdp.name])
-    df = pd.DataFrame(df_list, columns=['Episode', 'Timestep', 'Cumulative Reward', 'seed', 'AgentName', 'MDPName'])
+        df_list.append([e, _agent.step_number, cumulative_reward, s, _agent.name, _mdp.name, _agent.alpha, _agent.gamma, _agent.epsilon, _agent.rmax, _agent.u_count, _agent.lookahead])
+    df = pd.DataFrame(df_list, columns=['Episode', 'Timestep', 'Cumulative Reward', 'seed', 'AgentName', 'MDPName', 'alpha', 'gamma', 'epsilon', 'rmax', 'ucount', 'lookahead'])
     df.to_csv(CSV_DIR + "{0}_{1}_{2}_fin.csv".format(_agent.name, _mdp.name, s))
     _mdp.to_pickle(PKL_DIR + "mdp_{0}_{1}_{2}_fin.pkl".format(_agent.name, _mdp.name, s))
     _agent.q_to_csv(CSV_DIR + "q_{0}_{1}_{2}_fin.csv".format(_agent.name, _mdp.name, s))
@@ -78,7 +78,7 @@ def run_episodes(_mdp, _agent, step=50, episode=100, s=0, decision_cb=None, disp
 
 
 def runs_episodes(_mdp, _agent, step=50, episode=100, seed=10):
-    print("Running experiment: {0} in {1}".format(str(_agent), str(_mdp)))
+    print("Running experiment: {0} in {1}".format(_agent.name, _mdp.name))
     for s in range(0, seed):
         _agent.reset()
         print("-------- new seed: {0:02} starts --------".format(s))
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     qlearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, explore="uniform")
     sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, explore="uniform")
     rmax = RMAXAgent(mdp.get_actions(), name="RMAX", rmax=1, u_count=2, gamma=opts.discount, epsilon=opts.epsilon)
-    dynaq = DynaQAgent(mdp.get_actions(), name="DynaQ", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, n=opts.lookahead, explore="uniform")
+    dynaq = DynaQAgent(mdp.get_actions(), name="DynaQ", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, lookahead=opts.lookahead, explore="uniform")
     agent = None
     if opts.agent == 'q-learning': agent = qlearning
     elif opts.agent == 'sarsa': agent = sarsa
