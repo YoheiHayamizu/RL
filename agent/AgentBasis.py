@@ -11,7 +11,7 @@ class AgentBasisClass:
         self.rmax = None
         self.u_count = None
         self.lookahead = None
-        
+
         self.name = name
         self.actions = actions
         self.init_actions = self.actions
