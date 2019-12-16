@@ -10,14 +10,14 @@ import networkx as nx
 class MDPGraphWorld(MDPBasisClass):
     def __init__(self,
                  node_num=const.node_num,
-                 init_node=0,
-                 goal_node=14,
+                 init_node=const.start_nodes[0],
+                 goal_node=const.goal_nodes[0],
                  start_nodes=const.start_nodes,
                  goal_nodes=const.goal_nodes,
                  has_door_nodes=const.has_door_nodes_tuple,
                  door_open_nodes=const.door_open_nodes_dict,
                  door_id=const.door_id_dict,
-                 success_rate=const.success_rate_dict0,
+                 success_rate=const.env0,
                  step_cost=1.0,
                  goal_reward=const.goal_reward,
                  stack_cost=const.stack_cost,
@@ -116,38 +116,44 @@ class MDPGraphWorld(MDPBasisClass):
             neighbor = self.get_neighbor(node)
             neighbor_id = [node.id for node in neighbor]
             for a in const.ACTIONS:
-                if a == 'approach':
-                    for n in neighbor_id:
-                        if self.nodes[n].has_door() and self.nodes[node.id].has_door() and self.door_id[node.id] != \
-                                self.door_id[n]:
-                            self.actions[node.get_state()].add((a, n))
-                            node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-                            self.actions[node.get_state()].add((a, n))
-                            self.set_nodes()
-                        elif self.nodes[n].has_door() and not self.nodes[node.id].has_door():
-                            self.actions[node.get_state()].add((a, n))
-                            node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-                            self.actions[node.get_state()].add((a, n))
-                            self.set_nodes()
-                if a == 'goto':
-                    for n in neighbor_id:
-                        if not self.nodes[n].has_door():
-                            self.actions[node.get_state()].add((a, n))
-                            node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-                            self.actions[node.get_state()].add((a, n))
-                            self.set_nodes()
-                if a == 'opendoor':
-                    if self.nodes[node.id].has_door():
-                        self.actions[node.get_state()].add((a, node.id))
-                        node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-                        self.actions[node.get_state()].add((a, node.id))
-                        self.set_nodes()
-                if a == 'gothrough':
-                    if self.nodes[node.id].has_door():
-                        self.actions[node.get_state()].add((a, node.id))
-                        node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-                        self.actions[node.get_state()].add((a, node.id))
-                        self.set_nodes()
+                for n in neighbor_id + [node.id]:
+                    self.actions[node.get_state()].add((a, n))
+                    node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+                    self.actions[node.get_state()].add((a, n))
+            # for a in const.ACTIONS:
+            #     if a == 'approach':
+            #         for n in neighbor_id:
+            #             if self.nodes[n].has_door() and self.nodes[node.id].has_door() and self.door_id[node.id] != \
+            #                     self.door_id[n]:
+            #                 self.actions[node.get_state()].add((a, n))
+            #                 node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+            #                 self.actions[node.get_state()].add((a, n))
+            #                 self.set_nodes()
+            #             elif self.nodes[n].has_door() and not self.nodes[node.id].has_door():
+            #                 self.actions[node.get_state()].add((a, n))
+            #                 node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+            #                 self.actions[node.get_state()].add((a, n))
+            #                 self.set_nodes()
+            #     if a == 'goto':
+            #         for n in neighbor_id:
+            #             if not self.nodes[n].has_door():
+            #                 self.actions[node.get_state()].add((a, n))
+            #                 node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+            #                 self.actions[node.get_state()].add((a, n))
+            #                 self.set_nodes()
+            #     if a == 'opendoor':
+            #         if self.nodes[node.id].has_door():
+            #             self.actions[node.get_state()].add((a, node.id))
+            #             node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+            #             self.actions[node.get_state()].add((a, node.id))
+            #             self.set_nodes()
+            #     if a == 'gothrough':
+            #         if self.nodes[node.id].has_door():
+            #             self.actions[node.get_state()].add((a, node.id))
+            #             node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
+            #             self.actions[node.get_state()].add((a, node.id))
+            #             self.set_nodes()
+        self.set_nodes()
         # for action in self.actions.keys():
         #     print(action, self.actions[action])
 
@@ -176,30 +182,22 @@ class MDPGraphWorld(MDPBasisClass):
         graph_dist = {node[0]: [node[1], node[2]],
                       node[1]: [node[0], node[2], node[3]],
                       node[2]: [node[0], node[1], node[4]],
-                      node[3]: [node[1], node[5], node[10]],
-                      node[4]: [node[2], node[6], node[7]],
-                      node[5]: [node[3], node[6]],
-                      node[6]: [node[4], node[5]],
-                      node[7]: [node[4], node[8], node[25]],
-                      node[8]: [node[9], node[7]],
-                      node[9]: [node[8], node[13], node[14], node[15]],
-                      node[10]: [node[3], node[11]],
-                      node[11]: [node[12], node[10]],
+                      node[3]: [node[1], node[5]],
+                      node[4]: [node[2], node[8]],
+                      node[5]: [node[3], node[6], node[8]],
+                      node[6]: [node[5], node[7]],
+                      node[7]: [node[6], node[17]],
+                      node[8]: [node[4], node[5], node[9], node[11]],
+                      node[9]: [node[8], node[10]],
+                      node[10]: [node[9], node[17]],
+                      node[11]: [node[8], node[12], node[14]],
                       node[12]: [node[11], node[13]],
-                      node[13]: [node[9], node[12], node[14]],
-                      node[14]: [node[9], node[13], node[15]],
-                      node[15]: [node[9], node[14], node[16], node[18]],
-                      node[16]: [node[17], node[15], node[18]],
-                      node[17]: [node[16], node[23], node[24]],
-                      node[18]: [node[15], node[16], node[19]],
-                      node[19]: [node[20], node[18]],
-                      node[20]: [node[19], node[21]],
-                      node[21]: [node[20], node[22]],
-                      node[22]: [node[21], node[23]],
-                      node[23]: [node[22], node[17]],
-                      node[24]: [node[17], node[25]],
-                      node[25]: [node[24], node[26]],
-                      node[26]: [node[7], node[25]]}
+                      node[13]: [node[12], node[18]],
+                      node[14]: [node[11], node[15]],
+                      node[15]: [node[14], node[16]],
+                      node[16]: [node[15], node[18]],
+                      node[17]: [node[7], node[10], node[18]],
+                      node[18]: [node[13], node[16], node[17]]}
 
         G = nx.Graph(graph_dist)
         nx.set_node_attributes(G, 0, "count")
@@ -262,7 +260,9 @@ class MDPGraphWorld(MDPBasisClass):
             action = ("fail", action[1])
 
         # print("current goal is {0}".format(self.goal_query))
-        if next_state.success_rate[0] + next_state.success_rate[1] < rand and not self._is_goal_state(next_state):
+        if next_state.success_rate[0] + next_state.success_rate[1] < rand and \
+                (action[0] == "gothrough" or action[0] == "opendoor" or action[0] == "fail") and\
+                not self._is_goal_state(next_state):
             self.is_stack = True
             next_state.set_terminal()
 
@@ -391,7 +391,7 @@ class MDPGraphWorldNode(MDPStateClass):
 
 
 if __name__ == "__main__":
-    Graph_world = MDPGraphWorld(is_rand_init=True)
+    Graph_world = MDPGraphWorld(is_rand_init=False)
     Graph_world.reset()
     observation = Graph_world
     # Graph_world.print_graph()
@@ -403,7 +403,7 @@ if __name__ == "__main__":
         print(observation.get_cur_state().get_state(), random_action, end=" ")
         observation, reward, done, info = Graph_world.step(random_action)
         print(observation.get_cur_state().get_state())
-        print(observation.get_cur_state().is_terminal(), done)
+        # print(observation.get_cur_state().is_terminal(), done)
         # print(observation.get_params())
         if done:
             print("Goal!")
