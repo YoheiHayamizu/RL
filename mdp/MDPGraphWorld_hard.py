@@ -50,7 +50,6 @@ class MDPGraphWorld(MDPBasisClass):
         self.goal_query = str(self.nodes[self.goal_node])
         self.cur_state = self.init_state
         self.init_actions()
-        self.is_stack = False
         self.goal_reward = goal_reward
         self.stack_cost = stack_cost
         self.name = name
@@ -106,7 +105,6 @@ class MDPGraphWorld(MDPBasisClass):
 
     def get_goal_reward(self):
         return self.goal_reward
-
 
     # Setter
 
@@ -168,6 +166,8 @@ class MDPGraphWorld(MDPBasisClass):
         self.goal_query = str(self.nodes[self.goal_node])
 
     def set_nodes(self):
+        for node in self.nodes:
+            node.is_stack = False
         for i in self.success_rate:
             self.nodes[i].set_slip_prob(self.success_rate[i])
         for i in self.has_door_nodes:
@@ -217,9 +217,7 @@ class MDPGraphWorld(MDPBasisClass):
         """
         self.G.nodes[state]['count'] += 1
 
-        if state.is_terminal() or self.is_stack:
-            # if self.is_stack:
-            #     print("stack now")
+        if state.is_terminal():
             return state
 
         # print(self.get_neighbor(state))
@@ -261,9 +259,9 @@ class MDPGraphWorld(MDPBasisClass):
 
         # print("current goal is {0}".format(self.goal_query))
         if next_state.success_rate[0] + next_state.success_rate[1] < rand and \
-                (action[0] == "gothrough" or action[0] == "opendoor" or action[0] == "fail") and\
+                (action[0] == "gothrough" or action[0] == "opendoor" or action[0] == "fail") and \
                 not self._is_goal_state(next_state):
-            self.is_stack = True
+            next_state.is_stack = True
             next_state.set_terminal()
 
         return next_state
@@ -278,7 +276,7 @@ class MDPGraphWorld(MDPBasisClass):
         """
         if self._is_goal_state(next_state):
             return self.get_goal_reward()
-        elif self.is_stack:
+        elif next_state.get_is_stack():
             return -self.get_stack_cost()
         else:
             # return 0 - self.get_action_cost(state, next_state) - self.step_cost
@@ -288,7 +286,6 @@ class MDPGraphWorld(MDPBasisClass):
         self.cur_state.set_terminal(False)
         self.set_rand_init()
         self.set_rand_goal()
-        self.is_stack = False
         self.set_nodes()
         self.set_graph()
         super().reset()
@@ -336,6 +333,7 @@ class MDPGraphWorldNode(MDPStateClass):
         self._has_door = has_door
         self._door_open = door_open
         self._door_id = door_id
+        self.is_stack = False
         super().__init__(data=self.id, is_terminal=is_terminal)
 
     def __hash__(self):
@@ -375,6 +373,9 @@ class MDPGraphWorldNode(MDPStateClass):
         else:
             return "s{0}".format(self.id)
 
+    def get_is_stack(self):
+        return self.is_stack
+
     def set_slip_prob(self, new_slip_prob):
         self.success_rate = new_slip_prob
 
@@ -391,7 +392,9 @@ class MDPGraphWorldNode(MDPStateClass):
 
 
 if __name__ == "__main__":
-    Graph_world = MDPGraphWorld(is_rand_init=False)
+    Graph_world = MDPGraphWorld(is_rand_init=False,
+                                step_cost=1.0,
+                                success_rate=const.env1)
     Graph_world.reset()
     observation = Graph_world
     # Graph_world.print_graph()
@@ -409,3 +412,4 @@ if __name__ == "__main__":
             print("Goal!")
             print(observation.get_params())
             break
+    print(observation.is_stack)

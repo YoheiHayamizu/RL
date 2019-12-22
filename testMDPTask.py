@@ -57,6 +57,9 @@ def run_episodes(_mdp, _agent, step=50, episode=100, s=0, decision_cb=None, disp
 
             # END IF DONE
             if done:
+                # print(reward)
+                # UPDATE LEARNER
+                _agent.update(state, action, reward, episode=e)
                 # print("The agent arrived at tearminal state.")
                 # print("Exit")
                 break
