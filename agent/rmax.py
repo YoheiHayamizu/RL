@@ -19,6 +19,7 @@ class RMAXAgent(AgentBasisClass):
         self.u_count, self.init_urate = u_count, u_count
         self.epsilon, self.init_epsilon = epsilon, epsilon
         self.rmax, self.init_rmax = rmax, rmax
+        self.explore = "greedy"
 
         self.Q = defaultdict(lambda: defaultdict(lambda: self.rmax))
         self.V = defaultdict(lambda: 0.0)
@@ -50,10 +51,8 @@ class RMAXAgent(AgentBasisClass):
 
     def get_reward(self, state, action):
         if self.get_count(state, action) >= self.u_count:
-            # print(float(sum(self.rewards[state][action])) / self.get_count(state, action))
             return float(sum(self.rewards[state][action])) / self.get_count(state, action)
         else:
-            # print(self.rmax)
             return self.rmax
 
     def get_transition(self, state, action, next_state):
@@ -93,8 +92,8 @@ class RMAXAgent(AgentBasisClass):
             self.C_sa[pre_state][pre_action] += 1
             self.C_sas[pre_state][pre_action][state.get_state()] += 1
             self.rewards[pre_state][pre_action] += [reward]
-            # if self.get_count(pre_state, pre_action) == self.u_count:
-            self._update_policy_iteration()
+            if self.get_count(pre_state, pre_action) == self.u_count:
+                self._update_policy_iteration()
 
         self.set_pre_state(state.get_state())
         self.set_pre_action(action)
