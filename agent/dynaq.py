@@ -63,6 +63,17 @@ class DynaQAgent(AgentBasisClass):
         else:
             return self.C_sas[state][action][next_state]
 
+    def get_next_state(self, state, action):
+        rnd = random.random()
+        tmp = list(self.C_sas[state][action].keys())
+        next_states = tmp[:]
+        np.random.shuffle(next_states)
+        sp = next_states[0]
+        for next_state in next_states:
+            if rnd < self.get_transition(state, action, next_state):
+                sp = next_state
+        return sp
+
     # Core
 
     def act(self, state):
@@ -102,15 +113,7 @@ class DynaQAgent(AgentBasisClass):
                 s = random.choice(list(self.C_sas.keys()))
                 a = random.choice(list(self.C_sas[s].keys()))
                 r = self.get_reward(s, a)
-                max_prob = float("-inf")
-                tmp = list(self.C_sas[s][a].keys())
-                sp = random.choice(tmp)
-                next_states = tmp[:]
-                np.random.shuffle(next_states)
-                for key in next_states:
-                    p = self.get_transition(s, a, key)
-                    if p > max_prob:
-                        sp = key
+                sp = self.get_next_state(s, a)
                 diff = self.gamma * self._get_max_q_val(sp) - self.get_q_val(s, a)
                 self.Q[s][a] += self.alpha * (r + diff)
 
