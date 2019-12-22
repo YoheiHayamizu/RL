@@ -343,9 +343,20 @@ if __name__ == "__main__":
     # GET THE GRIDWORLD
     ###########################
     width, height = 5, 5
-    goals_loc = ((3, 4), )
-    holes_loc = ((1, 1), )
-    env = MDPGridWorld(width, height, goal_loc=(3, 4), goals_loc=goals_loc, holes_loc=holes_loc, grid_string=get_maze_grid())
+    init_loc = (3, 0)
+    starts_loc = ((4, 0),)
+    goals_loc = ((2, 2),)
+    walls_loc = ((3, 1), (3, 2), (3, 3), (0, 2), (1, 2), (1, 1),)
+    holes_loc = ((2, 1),)
+    env = MDPGridWorld(width, height, starts_loc=starts_loc,
+                       is_rand_init=False, is_rand_goal=False,
+                       init_loc=init_loc, goal_loc=goals_loc[0],
+                       goals_loc=goals_loc,
+                       walls_loc=walls_loc, holes_loc=holes_loc, name='test')
+    env.set_slip_prob(0.2)
+    env.set_step_cost(1.0)
+    env.set_hole_cost(50.0)
+    env.set_goal_reward(50.0)
     env.reset()
     observation = env
     print(observation.get_cur_state())

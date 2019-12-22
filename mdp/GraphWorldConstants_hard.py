@@ -14,8 +14,8 @@ start_nodes = (0, 5, 14)
 
 has_door_nodes_tuple = (1, 2, 3, 4, 6, 7, 9, 10, 12, 13, 15, 16)
 door_open_nodes_dict = {i: False for i in has_door_nodes_tuple}
-goal_reward = 10
-stack_cost = 10
+goal_reward = 50
+stack_cost = 50
 
 door_id_dict = {1: 0,
                 2: 1,
