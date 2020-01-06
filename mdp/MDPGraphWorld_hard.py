@@ -274,7 +274,7 @@ class MDPGraphWorld(MDPBasisClass):
         :param next_state: <State>
         :return: reward <float>
         """
-        if self._is_goal_state(next_state):
+        if self._is_goal_state(state):
             return self.get_goal_reward()
         elif next_state.get_is_stack():
             return -self.get_stack_cost()
