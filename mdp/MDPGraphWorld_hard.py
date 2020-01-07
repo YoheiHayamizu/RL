@@ -1,7 +1,6 @@
 from RL.mdp.MDPBasis import MDPBasisClass
 from RL.mdp.MDPState import MDPStateClass
 import RL.mdp.GraphWorldConstants_hard as const
-from location import locations
 import random
 from collections import defaultdict
 import networkx as nx
@@ -89,13 +88,6 @@ class MDPGraphWorld(MDPBasisClass):
         for node in self.nodes:
             nodes[str(node)] = node
         return nodes
-
-    def get_action_cost(self, state, next_state):
-        x1 = locations[str(state)]["x"]
-        y1 = locations[str(state)]["y"]
-        x2 = locations[str(next_state)]["x"]
-        y2 = locations[str(next_state)]["y"]
-        return const.distance(x1, y1, x2, y2)
 
     def get_visited(self, state):
         return self.G.nodes[state]['count']
@@ -279,7 +271,6 @@ class MDPGraphWorld(MDPBasisClass):
         elif next_state.get_is_stack():
             return -self.get_stack_cost()
         else:
-            # return 0 - self.get_action_cost(state, next_state) - self.step_cost
             return 0 - self.step_cost
 
     def reset(self):
