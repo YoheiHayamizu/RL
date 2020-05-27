@@ -6,6 +6,7 @@ import seaborn as sns;
 import optparse
 import pathlib
 import sys
+
 current_dir = pathlib.Path(__file__).resolve().parent
 sys.path.append(str(current_dir) + '/../')
 
@@ -68,16 +69,18 @@ def run_episodes(_mdp, _agent, step=50, episode=100, s=0, decision_cb=None, disp
         # Logging
         #############
         # if e % int(episode/2 + 0.5) == 0:  # record agent's log every 250 episode
-        #     _mdp.to_pickle(PKL_DIR + "mdp_{0}_{1}_{2}_{3}.pkl".format(_agent.name, _mdp.name, s, e))
-        #     _agent.to_pickle(PKL_DIR + "{0}_{1}_{2}_{3}.pkl".format(_agent.name, _mdp.name, s, e))
-        #     _agent.q_to_csv(CSV_DIR + "q_{0}_{1}_{2}_{3}.csv".format(_agent.name, _mdp.name, s, e))
-        df_list.append([e, _agent.step_number, cumulative_reward, s, _agent.name, _mdp.name, _agent.alpha, _agent.gamma, _agent.epsilon, _agent.rmax, _agent.u_count, _agent.lookahead])
-    df = pd.DataFrame(df_list, columns=['Episode', 'Timestep', 'Cumulative Reward', 'seed', 'AgentName', 'MDPName', 'alpha', 'gamma', 'epsilon', 'rmax', 'ucount', 'lookahead'])
-    df.to_csv(CSV_DIR + "{0}_{1}_{2}_fin.csv".format(_agent.name, _mdp.name, s))
-    _mdp.to_pickle(PKL_DIR + "mdp_{0}_{1}_{2}_fin.pkl".format(_agent.name, _mdp.name, s))
-    _agent.q_to_csv(CSV_DIR + "q_{0}_{1}_{2}_fin.csv".format(_agent.name, _mdp.name, s))
-    _agent.to_pickle(PKL_DIR + "{0}_{1}_{2}_fin.pkl".format(_agent.name, _mdp.name, s))
-
+        #     _mdp.to_pickle(LOG_DIR + "mdp_{0}_{1}_{2}_{3}.pkl".format(_agent.name, _mdp.name, s, e))
+        #     _agent.to_pickle(LOG_DIR + "{0}_{1}_{2}_{3}.pkl".format(_agent.name, _mdp.name, s, e))
+        #     _agent.q_to_csv(LOG_DIR + "q_{0}_{1}_{2}_{3}.csv".format(_agent.name, _mdp.name, s, e))
+        df_list.append([e, _agent.step_number, cumulative_reward, s, _agent.name, _mdp.name, _agent.alpha, _agent.gamma,
+                        _agent.epsilon, _agent.rmax, _agent.u_count, _agent.lookahead])
+    df = pd.DataFrame(df_list,
+                      columns=['Episode', 'Timestep', 'Cumulative Reward', 'seed', 'AgentName', 'MDPName', 'alpha',
+                               'gamma', 'epsilon', 'rmax', 'ucount', 'lookahead'])
+    df.to_csv(LOG_DIR + "{0}_{1}_{2}_fin.csv".format(_agent.name, _mdp.name, s))
+    _mdp.to_pickle(LOG_DIR + "mdp_{0}_{1}_{2}_fin.pkl".format(_agent.name, _mdp.name, s))
+    _agent.q_to_csv(LOG_DIR + "q_{0}_{1}_{2}_fin.csv".format(_agent.name, _mdp.name, s))
+    _agent.to_pickle(LOG_DIR + "{0}_{1}_{2}_fin.pkl".format(_agent.name, _mdp.name, s))
 
 
 def runs_episodes(_mdp, _agent, step=50, episode=100, seed=10):
@@ -158,15 +161,14 @@ def parseOptions():
     return opts
 
 
-
 if __name__ == "__main__":
 
-    from RL.mdp.MDPGridWorld import MDPGridWorld
+    from mdp.MDPGridWorld import MDPGridWorld
 
-    from RL.agent.qlearning import QLearningAgent
-    from RL.agent.sarsa import SarsaAgent
-    from RL.agent.rmax import RMAXAgent
-    from RL.agent.dynaq import DynaQAgent
+    from agent.qlearning import QLearningAgent
+    from agent.sarsa import SarsaAgent
+    from agent.rmax import RMAXAgent
+    from agent.dynaq import DynaQAgent
 
     opts = parseOptions()
 
@@ -176,11 +178,11 @@ if __name__ == "__main__":
     ###########################
     width, height = 5, 5
     init_loc = (1, 0)
-    starts_loc=((1, 0), (0, 4), )
-    goals_loc = ((4, 4), )
+    starts_loc = ((1, 0), (0, 4),)
+    goals_loc = ((4, 4),)
     # starts_loc=((1, 0), )
     # goals_loc = ((4, 4), )
-    walls_loc = ((3, 1), (3, 2), (3, 3), )
+    walls_loc = ((3, 1), (3, 2), (3, 3),)
     # walls_loc =()
     holes_loc = ()
     env = MDPGridWorld(width, height, starts_loc=starts_loc, is_rand_goal=True, is_rand_init=True,
@@ -194,7 +196,7 @@ if __name__ == "__main__":
     ###########################
     # GET THE DISPLAY ADAPTER
     ###########################
-    from RL.mdp import display as graphic
+    from mdp import display as graphic
 
     display = graphic.GraphicsGridworldDisplay(mdp)
     try:
@@ -205,18 +207,25 @@ if __name__ == "__main__":
     ###########################
     # GET THE AGENT
     ###########################
-    qlearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, explore="uniform")
-    sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, explore="uniform")
+    qlearning = QLearningAgent(mdp.get_actions(), name="QLearning", alpha=opts.alpha, gamma=opts.discount,
+                               epsilon=opts.epsilon, explore="uniform")
+    sarsa = SarsaAgent(mdp.get_actions(), name="Sarsa", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon,
+                       explore="uniform")
     rmax = RMAXAgent(mdp.get_actions(), name="RMAX", rmax=1, u_count=2, gamma=opts.discount, epsilon=opts.epsilon)
-    dynaq = DynaQAgent(mdp.get_actions(), name="DynaQ", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon, lookahead=opts.lookahead, explore="uniform")
+    dynaq = DynaQAgent(mdp.get_actions(), name="DynaQ", alpha=opts.alpha, gamma=opts.discount, epsilon=opts.epsilon,
+                       lookahead=opts.lookahead, explore="uniform")
     agent = None
-    if opts.agent == 'q-learning': agent = qlearning
-    elif opts.agent == 'sarsa': agent = sarsa
-    elif opts.agent == 'rmax': agent = rmax
-    elif opts.agent == 'dynaq': agent = dynaq
+    if opts.agent == 'q-learning':
+        agent = qlearning
+    elif opts.agent == 'sarsa':
+        agent = sarsa
+    elif opts.agent == 'rmax':
+        agent = rmax
+    elif opts.agent == 'dynaq':
+        agent = dynaq
 
     agent = rmax
-    
+
     # DISPLAY Q/V VALUES BEFORE SIMULATION OF EPISODES
     try:
         if not opts.manual and opts.agent == 'value':
@@ -246,14 +255,12 @@ if __name__ == "__main__":
     else:
         decisionCallback = agent
 
-
-
     ###########################
     # RUN
     ###########################
-    run_episodes(mdp, agent, step=opts.iters, episode=opts.episodes, decision_cb=decisionCallback ,display_cb=displayCallback, pause_cb=pauseCallback)
+    run_episodes(mdp, agent, step=opts.iters, episode=opts.episodes, decision_cb=decisionCallback,
+                 display_cb=displayCallback, pause_cb=pauseCallback)
     # run_experiments(mdp, agents, step=50, episode=100, seed=5)
-
 
     # DISPLAY POST-LEARNING VALUES / Q-VALUES
     if not opts.manual:
