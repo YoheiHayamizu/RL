@@ -9,7 +9,7 @@ import sys
 current_dir = pathlib.Path(__file__).resolve().parent
 sys.path.append(str(current_dir) + '/../')
 
-from testConstants import *
+from config import *
 
 sns.set()
 
