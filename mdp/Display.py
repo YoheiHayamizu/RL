@@ -17,7 +17,7 @@ from collections import defaultdict
 from mdp.DisplayUtils import *
 
 
-class User():
+class User:
     def __init__(self, actionFunction):
         self.action = None
         self.__func = actionFunction
@@ -28,7 +28,7 @@ class User():
 
         Used for debugging and lecture demos.
         """
-        from RL.mdp import DisplayUtils
+        from mdp import DisplayUtils
         self.action = None
         while True:
             keys = DisplayUtils.wait_for_keys()
@@ -37,7 +37,7 @@ class User():
             if 'Left' in keys: self.action = 'left'
             if 'Right' in keys: self.action = 'right'
             if 'q' in keys: sys.exit(0)
-            if self.action == None: continue
+            if self.action is None: continue
             break
         actions = self.__func[state.get_state()]
         if self.action not in actions:
@@ -47,8 +47,8 @@ class User():
         self.getUserAction(state)
         return self.action
 
-class GraphicsGridworldDisplay:
 
+class GraphicsGridworldDisplay:
     def __init__(self, gridworld, size=120, speed=1.0):
         self.gridworld = gridworld
         self.size = size
@@ -105,7 +105,7 @@ MARGIN = -1
 
 
 def setup(gridworld, title="Gridworld Display", size=120):
-    global GRID_SIZE, MARGIN, SCREEN_WIDTH, SCREEN_HEIGHT, GRID_HEIGHT
+    global GRID_SIZE, MARGIN, GRID_HEIGHT
     grid = gridworld.grid
     WINDOW_SIZE = size
     GRID_SIZE = size
@@ -149,7 +149,8 @@ def drawValues(gridworld, values, policy, currentState=None, message='State Valu
             isExit = state.is_terminal()
             if currentState is not None:
                 isCurrent = (currentState == state)
-            else: isCurrent = None
+            else:
+                isCurrent = None
             if gridType == '#':
                 drawSquare(x, y, 0, 0, 0, None, None, True, False, isCurrent)
             else:
@@ -157,9 +158,9 @@ def drawValues(gridworld, values, policy, currentState=None, message='State Valu
                     if (x, y) == gridworld.goal_loc:
                         value = gridworld.get_goal_reward()
                     elif (x, y) in gridworld.holes:
-                        value =  -gridworld.get_hole_cost()
+                        value = -gridworld.get_hole_cost()
                     else:
-                        value =  0 - gridworld.get_step_cost()
+                        value = 0 - gridworld.get_step_cost()
                     action = 'exit'
                     valString = '%.2f' % value
                     drawSquare(x, y, value, minValue, maxValue, valString, action, False, isExit, isCurrent)
@@ -189,7 +190,8 @@ def drawQValues(gridworld, qValues, currentState=None, message='State-Action Q-V
             # print(currentState, state)
             if currentState is not None:
                 isCurrent = (currentState == state)
-            else: isCurrent = None
+            else:
+                isCurrent = None
             actions = gridworld.get_actions(state)
             if actions is None or len(actions) == 0:
                 actions = [None]
@@ -208,9 +210,9 @@ def drawQValues(gridworld, qValues, currentState=None, message='State-Action Q-V
                 if (x, y) == gridworld.goal_loc:
                     value = gridworld.get_goal_reward()
                 elif (x, y) in gridworld.holes:
-                    value =  -gridworld.get_hole_cost()
+                    value = -gridworld.get_hole_cost()
                 else:
-                    value =  0 - gridworld.get_step_cost()
+                    value = 0 - gridworld.get_step_cost()
                 action = 'exit'
                 valString = '%.2f' % value
                 # print(type(value))
@@ -225,6 +227,7 @@ def drawQValues(gridworld, qValues, currentState=None, message='State-Action Q-V
 
 def blank():
     clear_screen()
+
 
 def drawNullSquare(grid, x, y, isObstacle, isTerminal, isCurrent):
     square_color = getColor(0, -1, 1)
@@ -355,7 +358,8 @@ def drawSquareQ(x, y, qVals, minVal, maxVal, valStrs, bestActions, isCurrent):
 
     for action in actions:
         text_color = TEXT_COLOR
-        if qVals[action] < max(qVals.values()): text_color = MUTED_TEXT_COLOR
+        if qVals[action] < max(qVals.values()):
+            text_color = MUTED_TEXT_COLOR
         valStr = ""
         if action in valStrs:
             valStr = valStrs[action]
@@ -374,13 +378,13 @@ def drawSquareQ(x, y, qVals, minVal, maxVal, valStrs, bestActions, isCurrent):
             text(w, text_color, valStr, "Courier", h, "bold", "w")
 
 
-def getColor(val, minVal, max):
-    r, g = 0.0, 0.0
+def getColor(val, minVal, maxVal):
+    red, green = 0.0, 0.0
     if val < 0 and minVal < 0:
-        r = val * 0.65 / minVal
-    if val > 0 and max > 0:
-        g = val * 0.65 / max
-    return format_color(r, g, 0.0)
+        red = val * 0.65 / minVal
+    if val > 0 and maxVal > 0:
+        green = val * 0.65 / maxVal
+    return format_color(red, green, 0.0)
 
 
 def square(pos, size, color, filled, width):
@@ -391,10 +395,10 @@ def square(pos, size, color, filled, width):
 
 
 def to_screen(point):
-    (gamex, gamey) = point
-    x = gamex * GRID_SIZE + MARGIN
-    y = (GRID_HEIGHT - gamey - 1) * GRID_SIZE + MARGIN
-    return (x, y)
+    (game_x, game_y) = point
+    x = game_x * GRID_SIZE + MARGIN
+    y = (GRID_HEIGHT - game_y - 1) * GRID_SIZE + MARGIN
+    return x, y
 
 
 def to_grid(point):

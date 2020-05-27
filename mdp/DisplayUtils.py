@@ -13,11 +13,7 @@
 
 
 import sys
-import math
-import random
-import string
 import time
-import types
 import tkinter
 
 _root_window = None  # The root window for graphics output
@@ -143,6 +139,7 @@ def draw_background():
 def _destroy_window(event=None):
     sys.exit(0)
 
+
 def end_graphics():
     global _root_window, _canvas, _mouse_enabled
     try:
@@ -255,7 +252,7 @@ def line(here, there, color=format_color(0, 0, 0), width=2):
 
 
 ##############################################################################
-### Keypress handling ########################################################
+# Keypress handling
 ##############################################################################
 
 # We bind to key-down and key-up events.
