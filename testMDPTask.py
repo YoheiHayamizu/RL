@@ -58,7 +58,6 @@ def run_episodes(_mdp, _agent, step=50, episode=100, s=0, decision_cb=None, disp
 
             # END IF DONE
             if done:
-                # print(reward)
                 # UPDATE LEARNER
                 _agent.update(state, action, reward, episode=e)
                 # print("The agent arrived at tearminal state.")
@@ -89,26 +88,6 @@ def runs_episodes(_mdp, _agent, step=50, episode=100, seed=10):
         _agent.reset()
         print("-------- new seed: {0:02} starts --------".format(s))
         run_episodes(_mdp, _agent, step, episode, s)
-
-
-def run_experiments(_mdp, _agents, step=50, episode=100, seed=10):
-    for a in _agents:
-        runs_episodes(_mdp, a, step, episode, seed)
-
-
-def episode_data_to_df(tmp, df, agent, seed, columns=("Timestep", "episode", "seed", "agent")):
-    plot_df = pd.DataFrame(columns=columns)
-    plot_df.loc[:, columns[0]] = tmp[seed]
-    plot_df.loc[:, columns[1]] = range(len(tmp[seed]))
-    plot_df.loc[:, columns[2]] = seed
-    plot_df.loc[:, columns[3]] = str(agent)
-    df = df.append(plot_df)
-    return df
-
-
-def load_agent(filename):
-    with open(filename, "rb") as f:
-        return dill.load(f)
 
 
 def parseOptions():
@@ -162,8 +141,7 @@ def parseOptions():
 
 
 if __name__ == "__main__":
-
-    from mdp.MDPGridWorld import MDPGridWorld
+    from mdp.MDPGridworld import MDPGridWorld
 
     from agent.qlearning import QLearningAgent
     from agent.sarsa import SarsaAgent
@@ -177,8 +155,8 @@ if __name__ == "__main__":
     # GET THE GRIDWORLD
     ###########################
     width, height = 5, 5
-    init_loc = (1, 0)
-    starts_loc = ((1, 0), (0, 4),)
+    init_loc = (0, 0)
+    starts_loc = ((2, 0),)
     goals_loc = ((4, 4),)
     # starts_loc=((1, 0), )
     # goals_loc = ((4, 4), )
@@ -187,7 +165,7 @@ if __name__ == "__main__":
     holes_loc = ()
     env = MDPGridWorld(width, height, starts_loc=starts_loc, is_rand_goal=True, is_rand_init=True,
                        init_loc=init_loc, goals_loc=goals_loc, walls_loc=walls_loc, holes_loc=holes_loc, name="testEnv")
-    env.set_slip_prob(0.3)
+    env.set_slip_prob(0.0)
     env.set_step_cost(0.0)
     env.set_hole_cost(1.0)
     env.set_goal_reward(1.0)
@@ -196,7 +174,7 @@ if __name__ == "__main__":
     ###########################
     # GET THE DISPLAY ADAPTER
     ###########################
-    from mdp import display as graphic
+    from mdp import Display as graphic
 
     display = graphic.GraphicsGridworldDisplay(mdp)
     try:
@@ -224,7 +202,7 @@ if __name__ == "__main__":
     elif opts.agent == 'dynaq':
         agent = dynaq
 
-    agent = rmax
+    agent = qlearning
 
     # DISPLAY Q/V VALUES BEFORE SIMULATION OF EPISODES
     try:
@@ -237,10 +215,8 @@ if __name__ == "__main__":
         sys.exit(0)
 
     # FIGURE OUT WHAT TO DISPLAY EACH TIME STEP (IF ANYTHING)
-    messageCallback = lambda x: print(x)
     if opts.quiet:
         displayCallback = lambda x: None
-        messageCallback = lambda x: None
     else:
         displayCallback = lambda state: display.displayQValues(agent, state, "CURRENT Q-VALUES")
 
@@ -260,7 +236,6 @@ if __name__ == "__main__":
     ###########################
     run_episodes(mdp, agent, step=opts.iters, episode=opts.episodes, decision_cb=decisionCallback,
                  display_cb=displayCallback, pause_cb=pauseCallback)
-    # run_experiments(mdp, agents, step=50, episode=100, seed=5)
 
     # DISPLAY POST-LEARNING VALUES / Q-VALUES
     if not opts.manual:

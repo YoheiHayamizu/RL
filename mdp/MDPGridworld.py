@@ -152,7 +152,7 @@ class MDPGridWorld(MDPBasisClass):
         if self.is_rand_goal:
             self.goal_loc = random.choice(self.goals)
         self.goal_query = self.goal_loc
-        print("New goal is {0}".format(str(self.goal_query)))
+        # print("New goal is {0}".format(str(self.goal_query)))
         # if self.is_rand_init:
         #     init_loc = random.randint(1, self.width), random.randint(1, self.height)
         #     while init_loc in self.walls + self.goals + self.holes + self.doors:
