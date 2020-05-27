@@ -1,6 +1,6 @@
 from mdp.MDPBasis import MDPBasisClass
 from mdp.MDPState import MDPStateClass
-from mdp.GridWorldConstants import *
+from mdp.GridworldConfig import *
 import random
 import sys
 import copy
