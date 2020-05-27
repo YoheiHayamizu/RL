@@ -1,6 +1,6 @@
-from RL.mdp.MDPBasis import MDPBasisClass
-from RL.mdp.MDPState import MDPStateClass
-from RL.mdp.GridWorldConstants import *
+from mdp.MDPBasis import MDPBasisClass
+from mdp.MDPState import MDPStateClass
+from mdp.GridWorldConstants import *
 import random
 import sys
 import copy
