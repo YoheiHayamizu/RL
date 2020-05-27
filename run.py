@@ -1,10 +1,16 @@
 import numpy as np
 import pandas as pd
+import dill
 import copy
 import seaborn as sns;
 import optparse
+import pathlib
 import sys
-from .config import *
+
+current_dir = pathlib.Path(__file__).resolve().parent
+sys.path.append(str(current_dir) + '/../')
+
+from config import *
 
 sns.set()
 
@@ -135,12 +141,12 @@ def parseOptions():
 
 
 if __name__ == "__main__":
-    from .mdp.MDPGridworld import MDPGridWorld
+    from mdp.MDPGridworld import MDPGridWorld
 
-    from .agent.qlearning import QLearningAgent
-    from .agent.sarsa import SarsaAgent
-    from .agent.rmax import RMAXAgent
-    from .agent.dynaq import DynaQAgent
+    from agent.qlearning import QLearningAgent
+    from agent.sarsa import SarsaAgent
+    from agent.rmax import RMAXAgent
+    from agent.dynaq import DynaQAgent
 
     opts = parseOptions()
 
@@ -168,7 +174,7 @@ if __name__ == "__main__":
     ###########################
     # GET THE DISPLAY ADAPTER
     ###########################
-    from .mdp import Display as graphic
+    from mdp import Display as graphic
 
     display = graphic.GraphicsGridworldDisplay(mdp)
     try:
