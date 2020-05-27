@@ -1,1 +1,1 @@
-LOG_DIR = "datas/logs"
+LOG_DIR = "datas/logs/"
