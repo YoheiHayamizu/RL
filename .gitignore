@@ -1,18 +1,7 @@
-#dirs
-images/
-figures/
-movies/
-csv/
-pkl/
+# My files
+Datas/
 .idea/
-
-#log files
-.csv
-.txt
 .DS_Store
-
-#picle files
-.picle
 
 # Prerequisites
 .d
