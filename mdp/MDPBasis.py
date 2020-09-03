@@ -72,7 +72,7 @@ class MDPBasisClass(object):
         done = self.cur_state.is_terminal()
         self.cur_state = next_state
 
-        return self, reward, done, self.get_params()
+        return next_state, reward, done, self.get_params()
 
     def reset(self):
         self.cur_state = self.init_state
