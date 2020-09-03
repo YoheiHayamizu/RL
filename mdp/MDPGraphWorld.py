@@ -1,6 +1,6 @@
 from mdp.MDPBasis import MDPBasisClass
 from mdp.MDPState import MDPStateClass
-import mdp.GraphWorldConstants_hard as const
+import mdp.GraphWorldConstants as const
 import random
 from collections import defaultdict
 import networkx as nx
@@ -280,6 +280,7 @@ class MDPGraphWorld(MDPBasisClass):
         self.set_nodes()
         self.set_graph()
         super().reset()
+        return self.cur_state
 
     def print_graph(self):
         import matplotlib.pyplot as plt
@@ -386,21 +387,20 @@ if __name__ == "__main__":
     Graph_world = MDPGraphWorld(is_rand_init=False,
                                 step_cost=1.0,
                                 success_rate=const.env1)
-    Graph_world.reset()
-    observation = Graph_world
+    observation = Graph_world.reset()
     # Graph_world.print_graph()
-    for t in range(100):
+    for t in range(1000):
         # print(Graph_world.get_actions())
         # print(observation.get_cur_state().get_state())
         # print(Graph_world.get_actions(observation.get_cur_state().get_state()))
-        random_action = (random.choice(list(Graph_world.get_actions(observation.get_cur_state().get_state()))))
-        print(observation.get_cur_state().get_state(), random_action, end=" ")
+        random_action = (random.choice(list(Graph_world.get_actions(observation.get_state()))))
+        print(observation.get_state(), random_action, end=" ")
         observation, reward, done, info = Graph_world.step(random_action)
-        print(observation.get_cur_state().get_state())
         # print(observation.get_cur_state().is_terminal(), done)
         # print(observation.get_params())
         if done:
             print("Goal!")
-            print(observation.get_params())
+            print(observation.is_stack)
+            print(Graph_world.get_params())
             break
-    print(observation.is_stack)
+        print(observation.get_state())
