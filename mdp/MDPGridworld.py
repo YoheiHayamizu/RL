@@ -1,14 +1,17 @@
 from mdp.MDPBasis import MDPBasisClass
 from mdp.MDPState import MDPStateClass
-from mdp.GridworldConfig import *
 import random
-import sys
 import copy
+
+ROUND_OFF = 5
+ACTIONS = ["up", "down", "left", "right"]
+
+MAP = [""]
 
 
 class MDPGridWorld(MDPBasisClass):
     def __init__(self, width=5, height=5, init_loc=(0, 0), goal_loc=(4, 4),
-                 starts_loc=((0, 0), ), goals_loc=((4, 4),), walls_loc=(), holes_loc=(), doors_loc=(),
+                 starts_loc=((0, 0),), goals_loc=((4, 4),), walls_loc=(), holes_loc=(), doors_loc=(),
                  is_goal_terminal=True, is_rand_init=False, is_rand_goal=False, grid_string=None,
                  slip_prob=0.0, step_cost=0.0, hole_cost=1.0, goal_reward=1, name="gridworld"
                  ):
@@ -45,8 +48,10 @@ class MDPGridWorld(MDPBasisClass):
         self.goal_reward = goal_reward
         self.is_rand_init = is_rand_init
         self.is_rand_goal = is_rand_goal
-        if grid_string is not None: self.grid = self.make_grid(grid_string)
-        else: self.grid = self.conv_grid()
+        if grid_string is not None:
+            self.grid = self.make_grid(grid_string)
+        else:
+            self.grid = self.conv_grid()
         self.init_grid = copy.deepcopy(self.grid)
         self.states = [[MDPGridWorldState(x, y) for y in range(len(self.grid[x]))] for x in range(len(self.grid))]
         self.init_state = self.states[self.init_loc[0]][self.init_loc[1]]
@@ -213,7 +218,8 @@ class MDPGridWorld(MDPBasisClass):
         else:
             next_state = self.get_state(x, y)
         # print("current goal is {0}".format(self.goal_loc))
-        if ((next_state.x, next_state.y) in self.holes or (next_state.x, next_state.y) == self.goal_loc) and self.is_goal_terminal:
+        if ((next_state.x, next_state.y) in self.holes or (
+                next_state.x, next_state.y) == self.goal_loc) and self.is_goal_terminal:
             next_state.set_terminal(True)
         return next_state
 
@@ -265,11 +271,16 @@ class MDPGridWorld(MDPBasisClass):
             y = self.height - ybar - 1
             for x, el in enumerate(line):
                 grid[x][y][0] = el
-                if el == 'G': new_goal_locs.append((x, y))
-                elif el == 'O': new_hole_locs.append((x, y))
-                elif el == '#': new_wall_locs.append((x, y))
-                elif el == 'D': new_door_locs.append((x, y))
-                elif el == 'S': new_init_loc = (x, y)
+                if el == 'G':
+                    new_goal_locs.append((x, y))
+                elif el == 'O':
+                    new_hole_locs.append((x, y))
+                elif el == '#':
+                    new_wall_locs.append((x, y))
+                elif el == 'D':
+                    new_door_locs.append((x, y))
+                elif el == 'S':
+                    new_init_loc = (x, y)
         self.set_goal_locs(tuple(new_goal_locs))
         self.set_hole_cost(tuple(new_hole_locs))
         self.set_wall_locs(tuple(new_wall_locs))

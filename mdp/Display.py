@@ -14,7 +14,7 @@
 
 import functools
 from collections import defaultdict
-from mdp.DisplayUtils import *
+from RL.mdp.DisplayUtils import *
 
 
 class User:
@@ -28,7 +28,7 @@ class User:
 
         Used for debugging and lecture demos.
         """
-        from mdp import DisplayUtils
+        from RL.mdp import DisplayUtils
         self.action = None
         while True:
             keys = DisplayUtils.wait_for_keys()
