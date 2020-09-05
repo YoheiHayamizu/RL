@@ -76,6 +76,7 @@ class MDPBasisClass(object):
 
     def reset(self):
         self.cur_state = self.init_state
+        return self.cur_state
 
     def to_pickle(self, filename):
         with open(filename, "wb") as f:

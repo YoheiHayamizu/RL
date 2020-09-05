@@ -1,5 +1,5 @@
-from mdp.MDPBasis import MDPBasisClass
-from mdp.MDPState import MDPStateClass
+from RL.mdp.MDPBasis import MDPBasisClass
+from RL.mdp.MDPState import MDPStateClass
 import random
 import copy
 
@@ -183,7 +183,7 @@ class MDPGridWorld(MDPBasisClass):
         self.cur_state.set_terminal(False)
         self.set_rand_init()
         self.set_rand_goal()
-        super().reset()
+        return super().reset()
 
     def _transition_func(self, state, action):
         """
