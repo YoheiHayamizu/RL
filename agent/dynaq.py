@@ -1,30 +1,26 @@
-from agent.AgentBasis import AgentBasisClass
+from RL.agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
-import pandas as pd
 import random
 
 
 class DynaQAgent(AgentBasisClass):
     def __init__(self,
-                 actions,
                  name="DynaQAgent",
                  alpha=0.1,
                  gamma=0.99,
                  epsilon=0.1,
                  lookahead=30,
-                 explore="uniform",
-                 **kwargs):
+                 actions=None,
+                 explore="uniform"):
         super().__init__(name, actions, gamma)
-
-        self.alpha, self.init_alpha = alpha, alpha
-        self.epsilon, self.init_epsilon = epsilon, epsilon
+        self.alpha = self.init_alpha = alpha
+        self.epsilon = self.init_epsilon = epsilon
         self.explore = explore
         self.lookahead = lookahead
 
         self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
         self.V = defaultdict(lambda: 0.0)
-        self.C_sa = defaultdict(lambda: defaultdict(lambda: 0))
         self.C_sas = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
         self.rewards = defaultdict(lambda: defaultdict(list))
 
@@ -36,7 +32,6 @@ class DynaQAgent(AgentBasisClass):
         params["epsilon"] = self.epsilon
         params["explore"] = self.explore
         params["Q"] = self.Q
-        params["C_sa"] = self.C_sa
         params["C_sas"] = self.C_sas
         return params
 
@@ -54,25 +49,18 @@ class DynaQAgent(AgentBasisClass):
             return 0.0
         return float(sum(self.rewards[state][action])) / self.get_count(state, action)
 
-    def get_transition(self, state, action, next_state):
-        return self.get_count(state, action, next_state) / self.get_count(state, action)
+    def get_transition(self, state, action):
+        next_state_probabilities = dict()
+        for next_state in self.C_sas[state][action].keys():
+            prob = self.get_count(state, action, next_state) / self.get_count(state, action)
+            next_state_probabilities[next_state] = prob
+        return next_state_probabilities
 
     def get_count(self, state, action, next_state=None):
         if next_state is None:
-            return self.C_sa[state][action]
+            return sum(self.C_sas[state][action].values())
         else:
             return self.C_sas[state][action][next_state]
-
-    def get_next_state(self, state, action):
-        rnd = random.random()
-        tmp = list(self.C_sas[state][action].keys())
-        next_states = tmp[:]
-        np.random.shuffle(next_states)
-        sp = next_states[0]
-        for next_state in next_states:
-            if rnd < self.get_transition(state, action, next_state):
-                sp = next_state
-        return sp
 
     # Core
 
@@ -82,7 +70,7 @@ class DynaQAgent(AgentBasisClass):
         elif self.explore == "softmax":
             action = self._soft_max_policy(state)
         elif self.explore == "random":
-            action = random.choice(list(self.actions[state.get_state()]))
+            action = random.choice(self.actions)
         else:
             action = self._epsilon_greedy_policy(state)  # default
 
@@ -90,42 +78,35 @@ class DynaQAgent(AgentBasisClass):
 
         return action
 
-    def update(self, state, action, reward, learning=True, **kwargs):
-        pre_state = self.get_pre_state()
-        pre_action = self.get_pre_action()
+    def update(self, state, action, reward, next_state, done=False, **kwargs):
+        self.C_sas[state][action][next_state] += 1
+        self.rewards[state][action] += [reward]
+        next_action_value = 0
+        if not done:
+            next_action_value = self._get_max_q_val(next_state)
 
-        if learning and reward is not None:
-            if pre_state is None and pre_action is None:
-                self.set_pre_state(state.get_state())
-                self.set_pre_action(action)
-                return
+        # real experience
+        diff = self.gamma * next_action_value - self.get_q_val(state, action)
+        self.Q[state][action] += self.alpha * (reward + diff)
 
-            self.C_sa[pre_state][pre_action] += 1
-            self.C_sas[pre_state][pre_action][state.get_state()] += 1
-            self.rewards[pre_state][pre_action] += [reward]
-
-            # real experience
-            diff = self.gamma * self._get_max_q_val(state.get_state()) - self.get_q_val(pre_state, pre_action)
-            self.Q[pre_state][pre_action] += self.alpha * (reward + diff)
-
-            # simulated experience
-            for n in range(self.lookahead):
-                s = random.choice(list(self.C_sas.keys()))
-                a = random.choice(list(self.C_sas[s].keys()))
-                r = self.get_reward(s, a)
-                sp = self.get_next_state(s, a)
-                diff = self.gamma * self._get_max_q_val(sp) - self.get_q_val(s, a)
-                self.Q[s][a] += self.alpha * (r + diff)
-
-        self.set_pre_state(state.get_state())
-        self.set_pre_action(action)
+        # simulated experience
+        for n in range(self.lookahead):
+            s = random.choice(list(self.C_sas.keys()))
+            a = random.choice(list(self.C_sas[s].keys()))
+            r = self.get_reward(s, a)
+            next_state_probabilities = self.get_transition(s, a)
+            if not next_state_probabilities == {}:
+                ns = max(next_state_probabilities, key=next_state_probabilities.get)
+            else:
+                ns = None
+            diff = self.gamma * self._get_max_q_val(ns) - self.get_q_val(s, a)
+            self.Q[s][a] += self.alpha * (r + diff)
 
     def reset(self):
         self.episode_number = 0
         self.alpha = self.init_alpha
         self.epsilon = self.init_epsilon
         self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
-        self.C_sa = defaultdict(lambda: defaultdict(lambda: 0))
         self.C_sas = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
         self.rewards = defaultdict(lambda: defaultdict(list))
 
@@ -136,7 +117,7 @@ class DynaQAgent(AgentBasisClass):
         return self._get_max_q(state)[1]
 
     def _get_max_q(self, state):
-        tmp = list(self.actions[state])
+        tmp = self.actions
         best_action = random.choice(tmp)
         actions = tmp[:]
         np.random.shuffle(actions)
@@ -153,7 +134,7 @@ class DynaQAgent(AgentBasisClass):
 
     def _epsilon_greedy_policy(self, state):
         if self.epsilon > np.random.random():
-            action = random.choice(list(self.actions[state.get_state()]))
+            action = random.choice(self.actions)
         else:
-            action = self._get_max_q_key(state.get_state())
+            action = self._get_max_q_key(state)
         return action

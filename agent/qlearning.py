@@ -1,4 +1,4 @@
-from agent.AgentBasis import AgentBasisClass
+from RL.agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
 import pandas as pd
@@ -7,16 +7,15 @@ import random
 
 class QLearningAgent(AgentBasisClass):
     def __init__(self,
-                 actions,
                  name="QLearningAgent",
                  alpha=0.5,
                  gamma=0.99,
                  epsilon=0.1,
                  explore="uniform",
-                 **kwargs):
+                 actions=None):
         super().__init__(name, actions, gamma)
-        self.alpha, self.init_alpha = alpha, alpha
-        self.epsilon, self.init_epsilon = epsilon, epsilon
+        self.alpha = self.init_alpha = alpha
+        self.epsilon = self.init_epsilon = epsilon
         self.explore = explore
 
         self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
@@ -56,7 +55,7 @@ class QLearningAgent(AgentBasisClass):
         elif self.explore == "softmax":
             action = self._soft_max_policy(state)
         elif self.explore == "random":
-            action = random.choice(list(self.actions[state.get_state()]))
+            action = random.choice(self.actions)
         else:
             action = self._epsilon_greedy_policy(state)  # default
 
@@ -64,20 +63,13 @@ class QLearningAgent(AgentBasisClass):
 
         return action
 
-    def update(self, state, action, reward, learning=True, **kwargs):
-        pre_state = self.get_pre_state()
-        pre_action = self.get_pre_action()
-        if learning:
-            if pre_state is None:
-                self.set_pre_state(state.get_state())
-                self.set_pre_action(action)
-                return
-
-            diff = self.gamma * self._get_max_q_val(state.get_state()) - self.get_q_val(pre_state, pre_action)
-            self.Q[pre_state][pre_action] += self.alpha * (reward + diff)
-        # print(pre_state, pre_action, self.Q[pre_state][pre_action])
-        self.set_pre_state(state.get_state())
-        self.set_pre_action(action)
+    def update(self, state, action, reward, next_state, done=False, **kwargs):
+        next_action_value = 0
+        if not done:
+            next_action_value = self._get_max_q_val(next_state)
+        diff = self.gamma * next_action_value - self.get_q_val(state, action)
+        self.Q[state][action] += self.alpha * (reward + diff)
+        # print(state, action, self.Q[state][action])
 
     def reset(self):
         self.alpha = self.init_alpha
@@ -92,8 +84,8 @@ class QLearningAgent(AgentBasisClass):
         return self._get_max_q(state)[1]
 
     def _get_max_q(self, state):
-        tmp = list(self.actions[state])
-        best_action = random.choice(tmp)
+        tmp = self.actions
+        best_action = random.choice(self.actions)
         actions = tmp[:]
         np.random.shuffle(actions)
         max_q_val = float("-inf")
@@ -109,7 +101,7 @@ class QLearningAgent(AgentBasisClass):
 
     def _epsilon_greedy_policy(self, state):
         if self.epsilon > np.random.random():
-            action = random.choice(list(self.actions[state.get_state()]))
+            action = random.choice(self.actions)
         else:
-            action = self._get_max_q_key(state.get_state())
+            action = self._get_max_q_key(state)
         return action

@@ -3,23 +3,12 @@ import dill
 
 
 class AgentBasisClass:
-    def __init__(self, name, actions, gamma=0.99):
-
-        self.alpha = None
-        self.gamma = None
-        self.epsilon = None
-        self.rmax = None
-        self.u_count = None
-        self.lookahead = None
-
+    def __init__(self, name, actions=None, gamma=0.99):
         self.name = name
         self.actions = actions
-        self.init_actions = self.actions
         self.gamma = gamma
-        self.episode_number = 0
+        self.number_of_episode = 0
         self.step_number = 0
-        self.pre_state = None
-        self.pre_action = None
 
     def __str__(self):
         return str(self.name)
@@ -46,12 +35,6 @@ class AgentBasisClass:
     def get_gamma(self):
         return self.gamma
 
-    def get_pre_state(self):
-        return self.pre_state
-
-    def get_pre_action(self):
-        return self.pre_action
-
     # Setter
 
     def set_name(self, new_name):
@@ -60,29 +43,18 @@ class AgentBasisClass:
     def set_gamma(self, new_gamma):
         self.gamma = new_gamma
 
-    def set_actions(self, state, new_actions):
-        self.actions[state] = new_actions
-
-    def set_pre_state(self, state):
-        self.pre_state = state
-
-    def set_pre_action(self, action):
-        self.pre_action = action
+    def set_actions(self, new_actions):
+        self.actions = new_actions
 
     # Core
 
     def act(self, state): ...
 
     def reset(self):
-        self.episode_number = 0
-        self.pre_state = None
-        self.pre_action = None
+        self.number_of_episode = 0
 
     def reset_of_episode(self):
         self.step_number = 0
-        self.actions = self.init_actions
-        self.pre_state = None
-        self.pre_action = None
 
     def q_to_csv(self, filename):
         table = pd.DataFrame(self.Q, dtype=str)
