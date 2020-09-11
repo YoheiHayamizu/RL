@@ -6,6 +6,7 @@ class MDPStateClass(object):
     def __init__(self, data, is_terminal=False):
         self.data = data
         self.__is_terminal = is_terminal
+        self.__count = 0
 
     # Accessors
 
@@ -15,6 +16,9 @@ class MDPStateClass(object):
     def is_terminal(self):
         return self.__is_terminal
 
+    def get_count(self):
+        return self.__count
+
     # Setters
 
     def set_data(self, data):
@@ -23,10 +27,10 @@ class MDPStateClass(object):
     def set_terminal(self, is_terminal=True):
         self.__is_terminal = is_terminal
 
-    # Core
+    def is_visited(self):
+        self.__count += 1
 
-    def judge_is_terminal(self):
-        pass
+    # Core
 
     def __hash__(self):
         if self.data.__hash__ is None:
@@ -52,8 +56,8 @@ class MDPBasisClass(object):
                  transition_func: Any,
                  reward_func: Any,
                  actions: Any = None):
-        self.__init_state = copy.deepcopy(init_state)
-        self.__current_state = self.__init_state
+        self.__init_state = init_state
+        self.__current_state = copy.deepcopy(self.__init_state)
         self.__actions = actions
         self.__transition_func = transition_func
         self.__reward_func = reward_func
@@ -104,6 +108,7 @@ class MDPBasisClass(object):
         :param action: <Any>
         :return: tuple[Any, float, bool, dict]
         """
+        self.__current_state.is_visited()
         next_state = self.__transition_func(self.__current_state, action)
         reward = self.__reward_func(self.__current_state, action, next_state)
         done = self.__current_state.is_terminal()

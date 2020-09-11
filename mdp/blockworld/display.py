@@ -14,7 +14,7 @@
 
 import functools
 from collections import defaultdict
-from RL.mdp.DisplayUtils import *
+from mdp.blockworld.displayutils import *
 
 
 class User:
@@ -28,10 +28,10 @@ class User:
 
         Used for debugging and lecture demos.
         """
-        from mdp import DisplayUtils
+        from mdp.blockworld import displayutils
         self.action = None
         while True:
-            keys = DisplayUtils.wait_for_keys()
+            keys = displayutils.wait_for_keys()
             if 'Up' in keys: self.action = 'up'
             if 'Down' in keys: self.action = 'down'
             if 'Left' in keys: self.action = 'left'
