@@ -1,12 +1,12 @@
 import copy
 from typing import Union, List, Any, Optional, Tuple
+from collections import defaultdict
 
 
 class MDPStateClass(object):
     def __init__(self, data, is_terminal=False):
         self.data = data
         self.__is_terminal = is_terminal
-        self.__count = 0
 
     # Accessors
 
@@ -16,9 +16,6 @@ class MDPStateClass(object):
     def is_terminal(self):
         return self.__is_terminal
 
-    def get_count(self):
-        return self.__count
-
     # Setters
 
     def set_data(self, data):
@@ -26,9 +23,6 @@ class MDPStateClass(object):
 
     def set_terminal(self, is_terminal=True):
         self.__is_terminal = is_terminal
-
-    def is_visited(self):
-        self.__count += 1
 
     # Core
 
@@ -51,6 +45,7 @@ class MDPStateClass(object):
 
 class MDPBasisClass(object):
     """ abstract class for a MDP """
+
     def __init__(self,
                  init_state: MDPStateClass,
                  transition_func: Any,
@@ -61,8 +56,9 @@ class MDPBasisClass(object):
         self.__actions = actions
         self.__transition_func = transition_func
         self.__reward_func = reward_func
+        self.__state_counter = defaultdict(lambda: 0)
 
-    # Accessors
+        # Accessors
 
     def get_params(self) -> dict:
         """ get parameters
@@ -89,6 +85,9 @@ class MDPBasisClass(object):
     def get_reward_func(self):
         return self.__reward_func
 
+    def get_state_count(self, state):
+        return self.__state_counter[state]
+
     # Setters
 
     def set_init_state(self, new_init_state):
@@ -108,7 +107,7 @@ class MDPBasisClass(object):
         :param action: <Any>
         :return: tuple[Any, float, bool, dict]
         """
-        self.__current_state.is_visited()
+        self.__state_counter[self.__current_state] += 1
         next_state = self.__transition_func(self.__current_state, action)
         reward = self.__reward_func(self.__current_state, action, next_state)
         done = self.__current_state.is_terminal()
@@ -119,4 +118,3 @@ class MDPBasisClass(object):
     def reset(self):
         self.__current_state = self.__init_state
         return self.__current_state
-
