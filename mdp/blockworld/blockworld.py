@@ -1,9 +1,8 @@
-from mdp.MDPBasis import MDPBasisClass, MDPStateClass
+from mdp.base.mdpBase import MDPBasisClass, MDPStateClass
 import random
 
 # import copy
 
-ROUND_OFF = 5
 ACTIONS = ["up", "down", "left", "right"]
 
 MAP = [[' ', ' ', ' ', 'G'],
@@ -20,10 +19,10 @@ class BlockWorld(MDPBasisClass):
                  height=5,
                  init_loc=(0, 0),
                  goal_loc=(4, 4),
-                 walls_loc=(),
-                 holes_loc=(),
+                 walls_loc=((), ),
+                 holes_loc=((), ),
                  exit_flag=True,
-                 map=None,
+                 blockmap=None,
                  slip_prob=0.0,
                  step_cost=0.0,
                  hole_cost=1.0,
@@ -54,8 +53,8 @@ class BlockWorld(MDPBasisClass):
         self.hole_cost = hole_cost
         self.goal_reward = goal_reward
 
-        if map is not None:
-            self.blocks = self.make_blockworld(map)
+        if blockmap is not None:
+            self.blocks = self.make_blockworld(blockmap)
         else:
             self.blocks = self.convert_blockworld()
 
@@ -312,20 +311,14 @@ if __name__ == "__main__":
     ###########################
     # GET THE GRIDWORLD
     ###########################
-    width, height = 5, 5
-    init_loc = (0, 0)
-    starts_loc = (4, 4)
-    goals_loc = ((2, 2),)
-    walls_loc = ((3, 1), (3, 2), (3, 3), (0, 2), (1, 2), (1, 1),)
-    holes_loc = ((2, 1),)
     env = BlockWorld(
         name="blockworld",
-        width=width,
-        height=height,
-        init_loc=init_loc,
-        goal_loc=goals_loc,
-        walls_loc=walls_loc,
-        holes_loc=holes_loc)
+        width=5,
+        height=5,
+        init_loc=(0, 0),
+        goal_loc=(4, 4),
+        walls_loc=((3, 1), (3, 2), (3, 3), (0, 2), (1, 2), (1, 1),),
+        holes_loc=((2, 1),))
     env.set_slip_prob(0.2)
     env.set_step_cost(1.0)
     env.set_hole_cost(50.0)
