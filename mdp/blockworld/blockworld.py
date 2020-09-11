@@ -19,8 +19,8 @@ class BlockWorld(MDPBasisClass):
                  height=5,
                  init_loc=(0, 0),
                  goal_loc=(4, 4),
-                 walls_loc=((), ),
-                 holes_loc=((), ),
+                 walls_loc=((),),
+                 holes_loc=((),),
                  exit_flag=True,
                  blockmap=None,
                  slip_prob=0.0,
@@ -260,23 +260,23 @@ class BlockWorld(MDPBasisClass):
 
     def convert_blockworld(self):
         grid = [[' ' for y in range(self.height)] for x in range(self.width)]
-        for el in self.goal:
-            grid[el[0]][el[1]] = 'G'
-        for el in self.holes:
-            grid[el[0]][el[1]] = 'H'
+        for x, y in self.holes:
+            grid[x][y] = 'H'
         for el in self.walls:
             grid[el[0]][el[1]] = '#'
         x, y = self.start
         grid[x][y] = 'S'
+        x, y = self.goal
+        grid[x][y] = 'G'
         return grid
 
     def print_blockworld(self):
         x, y = self.get_current_state().x, self.get_current_state().y
         tmp = self.blocks[x][y]
         self.blocks[x][y] += '*'
-        t = [[self.blocks[x][y] for x in range(self.width)] for y in range(self.height)]
-        t.reverse()
-        for line in t:
+        tmp2 = [[self.blocks[x][y] for x in range(self.width)] for y in range(self.height)]
+        tmp2.reverse()
+        for line in tmp2:
             print(line)
         self.blocks[x][y] = tmp
 
@@ -293,18 +293,11 @@ class BlockWorldState(MDPStateClass):
         self.y = y
         super().__init__(data=(self.x, self.y), is_terminal=is_terminal)
 
-    def __hash__(self):
-        return hash(tuple(self.data))
-
     def __str__(self):
-        return "s: ({0}, {1})({2})".format(self.x, self.y, self.get_count())
+        return "s: ({0}, {1})".format(self.x, self.y)
 
     def __repr__(self):
         return self.__str__()
-
-    def __eq__(self, other):
-        assert isinstance(other, BlockWorldState), "Arg object is not in" + type(self).__module__
-        return self.x == other.x and self.y == other.y
 
 
 if __name__ == "__main__":
@@ -318,8 +311,8 @@ if __name__ == "__main__":
         init_loc=(0, 0),
         goal_loc=(4, 4),
         walls_loc=((3, 1), (3, 2), (3, 3), (0, 2), (1, 2), (1, 1),),
-        holes_loc=((2, 1),))
-    env.set_slip_prob(0.2)
+        holes_loc=((2, 1), (3, 4)))
+    env.set_slip_prob(0.0)
     env.set_step_cost(1.0)
     env.set_hole_cost(50.0)
     env.set_goal_reward(50.0)
@@ -327,7 +320,7 @@ if __name__ == "__main__":
     env.print_blockworld()
     for t in range(10):
         random_action = random.choice(ACTIONS)
-        print(observation, random_action)
+        print(observation, env.get_state_count(observation), random_action)
         observation, reward, done, info = env.step(random_action)
         if done:
             print("The agent arrived at tearminal state.")
