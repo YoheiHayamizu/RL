@@ -41,25 +41,26 @@ class BlockWorld(MDPBasisClass):
         :param name: <str> name of maze
         """
 
-        self.name = name
-        self.width = width
-        self.height = height
-        self.start = init_loc
-        self.goal = goal_loc
-        self.walls = walls_loc
-        self.holes = holes_loc
-        self.slip_prob = slip_prob
-        self.step_cost = step_cost
-        self.hole_cost = hole_cost
-        self.goal_reward = goal_reward
-
         if blockmap is not None:
             self.blocks = self.make_blockworld(blockmap)
         else:
             self.blocks = self.convert_blockworld()
 
-        self.init_state = self.current_state = BlockWorldState(self.start[0], self.start[1])
+        self.name = name
+        self.width = width
+        self.height = height
+        self.init_loc = init_loc
+        self.goal_loc = goal_loc
+        self.walls_loc = walls_loc
+        self.holes_loc = holes_loc
+        self.slip_prob = slip_prob
+        self.step_cost = step_cost
+        self.hole_cost = hole_cost
+        self.goal_reward = goal_reward
+
+        self.init_state = BlockWorldState(self.init_loc[0], self.init_loc[1])
         self.exit_flag = exit_flag
+        print(self.init_state)
         super().__init__(self.init_state, self._transition_func, self._reward_func, ACTIONS)
 
     def __str__(self):
@@ -74,8 +75,8 @@ class BlockWorld(MDPBasisClass):
         get_params = super().get_params()
         get_params["EnvName"] = self.name
         get_params["init_state"] = self.get_init_state()
-        get_params["start"] = self.start
-        get_params["goal"] = self.goal
+        get_params["init_loc"] = self.init_loc
+        get_params["goal_loc"] = self.goal_loc
         get_params["slip_prob"] = self.slip_prob
         get_params["hole_cost"] = self.hole_cost
         get_params["step_cost"] = self.step_cost
@@ -93,14 +94,11 @@ class BlockWorld(MDPBasisClass):
     def get_goal_reward(self):
         return self.goal_reward
 
-    def get_goals_loc(self):
-        return self.goal
+    def get_goal_loc(self):
+        return self.goal_loc
 
     def get_holes_loc(self):
-        return self.holes
-
-    def get_visited(self, state):
-        return self.blocks[state.x][state.y][1]
+        return self.holes_loc
 
     def get_executable_actions(self, state):
         return self.get_actions()
@@ -120,22 +118,22 @@ class BlockWorld(MDPBasisClass):
         self.goal_reward = new_goal_reward
 
     def set_init_loc(self, new_init_loc):
-        self.start = new_init_loc
+        self.init_loc = new_init_loc
 
     def set_goal_locs(self, new_goal_locs):
-        self.goal = new_goal_locs
+        self.goal_loc = new_goal_locs
 
     def set_wall_locs(self, new_wall_locs):
-        self.walls = new_wall_locs
+        self.walls_loc = new_wall_locs
 
     def set_hole_locs(self, new_hole_locs):
-        self.holes = new_hole_locs
+        self.holes_loc = new_hole_locs
 
     def add_goals_loc(self, new_goal_loc):
-        self.goal.append(new_goal_loc)
+        self.goal_loc.append(new_goal_loc)
 
     def add_holes_loc(self, new_hole_loc):
-        self.holes.append(new_hole_loc)
+        self.holes_loc.append(new_hole_loc)
 
     # Core
 
@@ -161,7 +159,7 @@ class BlockWorld(MDPBasisClass):
             print("slip action: ")
             action = random.choice(self.get_actions())
 
-        x, y = state.x, state.y
+        x, y = state.get_data()
 
         if action == "up" and self.__is_allowed(x, y + 1) and not self.__is_wall(x, y + 1):
             next_state = BlockWorldState(x, y + 1)
@@ -173,9 +171,9 @@ class BlockWorld(MDPBasisClass):
             next_state = BlockWorldState(x + 1, y)
         else:
             next_state = BlockWorldState(x, y)
-        # print("current goal is {0}".format(self.goal_loc))
-        if ((next_state.x, next_state.y) in self.holes or (
-                next_state.x, next_state.y) == self.goal) and self.exit_flag:
+
+        new_x, new_y = next_state.x, next_state.y
+        if ((new_x, new_y) in self.holes_loc or (new_x, new_y) == self.goal_loc) and self.exit_flag:
             next_state.set_terminal(True)
         return next_state
 
@@ -201,7 +199,7 @@ class BlockWorld(MDPBasisClass):
         """
         # if (x, y) in self.walls:
         #     print("hit wall!")
-        return (x, y) in self.walls
+        return (x, y) in self.walls_loc
 
     def _reward_func(self, state, action, next_state):
         """
@@ -211,9 +209,9 @@ class BlockWorld(MDPBasisClass):
         :param next_state: <State>
         :return: reward <float>
         """
-        if (next_state.x, next_state.y) == self.goal:
+        if (next_state.x, next_state.y) == self.goal_loc:
             return self.get_goal_reward()
-        elif (next_state.x, next_state.y) in self.holes:
+        elif (next_state.x, next_state.y) in self.holes_loc:
             return -self.get_hole_cost()
         else:
             return 0 - self.step_cost
@@ -248,13 +246,13 @@ class BlockWorld(MDPBasisClass):
 
     def convert_blockworld(self):
         grid = [[' ' for y in range(self.height)] for x in range(self.width)]
-        for x, y in self.holes:
+        for x, y in self.holes_loc:
             grid[x][y] = 'H'
-        for el in self.walls:
+        for el in self.walls_loc:
             grid[el[0]][el[1]] = '#'
-        x, y = self.start
+        x, y = self.init_loc
         grid[x][y] = 'S'
-        x, y = self.goal
+        x, y = self.goal_loc
         grid[x][y] = 'G'
         return grid
 
