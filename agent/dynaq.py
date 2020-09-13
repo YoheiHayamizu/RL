@@ -1,4 +1,4 @@
-from RL.agent.AgentBasis import AgentBasisClass
+from .AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
 import random
@@ -10,7 +10,7 @@ class DynaQAgent(AgentBasisClass):
                  alpha=0.1,
                  gamma=0.99,
                  epsilon=0.1,
-                 lookahead=30,
+                 lookahead=10,
                  actions=None,
                  explore="uniform"):
         super().__init__(name, actions, gamma)
@@ -27,12 +27,11 @@ class DynaQAgent(AgentBasisClass):
     # Accessors
 
     def get_params(self):
-        params = self.get_params()
+        params = super().get_params()
         params["alpha"] = self.alpha
         params["epsilon"] = self.epsilon
         params["explore"] = self.explore
-        params["Q"] = self.Q
-        params["C_sas"] = self.C_sas
+        params["lookahead"] = self.lookahead
         return params
 
     def get_q_val(self, state, action):
@@ -74,7 +73,7 @@ class DynaQAgent(AgentBasisClass):
         else:
             action = self._epsilon_greedy_policy(state)  # default
 
-        self.step_number += 1
+        self.number_of_steps += 1
 
         return action
 

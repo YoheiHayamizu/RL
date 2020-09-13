@@ -27,10 +27,11 @@ class RMAXAgent(AgentBasisClass):
     # Accessors
 
     def get_params(self):
-        params = self.get_params()
+        params = super().get_params()
         params["urate"] = self.u_count
-        params["Q"] = self.Q
-        params["C_sas"] = self.C_sas
+        params["epsilon"] = self.epsilon
+        params["rmax"] = self.rmax
+        params["explore"] = self.explore
         return params
 
     def get_urate(self):
@@ -73,7 +74,7 @@ class RMAXAgent(AgentBasisClass):
     def act(self, state):
         action = self._get_max_q_key(state)
 
-        self.step_number += 1
+        self.number_of_steps += 1
 
         return action
 

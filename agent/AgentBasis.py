@@ -7,8 +7,8 @@ class AgentBasisClass:
         self.name = name
         self.actions = actions
         self.gamma = gamma
-        self.number_of_episode = 0
-        self.step_number = 0
+        self.number_of_episodes = 0
+        self.number_of_steps = 0
 
     def __str__(self):
         return str(self.name)
@@ -24,8 +24,8 @@ class AgentBasisClass:
         :return: <dict>
         """
         params = dict()
-        params["name"] = self.name
-        params["actions"] = self.actions
+        params["AgentName"] = self.name
+        params["Agent's actions"] = self.actions
         params["gamma"] = self.gamma
         return params
 
@@ -51,10 +51,12 @@ class AgentBasisClass:
     def act(self, state): ...
 
     def reset(self):
-        self.number_of_episode = 0
+        self.number_of_steps = 0
+        self.number_of_episodes = 0
 
     def reset_of_episode(self):
-        self.step_number = 0
+        self.number_of_steps = 0
+        self.number_of_episodes += 1
 
     def q_to_csv(self, filename):
         table = pd.DataFrame(self.Q, dtype=str)

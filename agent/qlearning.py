@@ -1,4 +1,4 @@
-from RL.agent.AgentBasis import AgentBasisClass
+from agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
 import pandas as pd
@@ -8,7 +8,7 @@ import random
 class QLearningAgent(AgentBasisClass):
     def __init__(self,
                  name="QLearningAgent",
-                 alpha=0.5,
+                 alpha=0.1,
                  gamma=0.99,
                  epsilon=0.1,
                  explore="uniform",
@@ -23,11 +23,10 @@ class QLearningAgent(AgentBasisClass):
     # Accessors
 
     def get_params(self):
-        params = self.get_params()
+        params = super().get_params()
         params["alpha"] = self.alpha
         params["epsilon"] = self.epsilon
         params["explore"] = self.explore
-        params["Q"] = self.Q
         return params
 
     def get_alpha(self):
@@ -59,7 +58,7 @@ class QLearningAgent(AgentBasisClass):
         else:
             action = self._epsilon_greedy_policy(state)  # default
 
-        self.step_number += 1
+        self.number_of_steps += 1
 
         return action
 

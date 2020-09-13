@@ -7,7 +7,7 @@ import random
 class SarsaAgent(AgentBasisClass):
     def __init__(self,
                  name="SarsaAgent",
-                 alpha=0.5,
+                 alpha=0.1,
                  gamma=0.99,
                  epsilon=0.1,
                  actions=None,
@@ -16,18 +16,16 @@ class SarsaAgent(AgentBasisClass):
         self.alpha = self.init_alpha = alpha
         self.epsilon = self.init_epsilon = epsilon
         self.explore = explore
-        self.step_number = 0
 
         self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
 
         # Accessors
 
     def get_params(self):
-        params = self.get_params()
+        params = super().get_params()
         params["alpha"] = self.alpha
         params["epsilon"] = self.epsilon
         params["explore"] = self.explore
-        params["Q"] = self.Q
         return params
 
     def get_alpha(self):
@@ -59,7 +57,7 @@ class SarsaAgent(AgentBasisClass):
         else:
             action = self._epsilon_greedy_policy(state)  # default
 
-        self.step_number += 1
+        self.number_of_steps += 1
 
         return action
 
@@ -77,7 +75,6 @@ class SarsaAgent(AgentBasisClass):
     def reset(self):
         self.alpha = self.init_alpha
         self.epsilon = self.init_epsilon
-        self.episode_number = 0
         self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
 
     def _get_max_q_key(self, state):
