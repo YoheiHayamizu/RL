@@ -1,4 +1,5 @@
 import copy
+import dill
 from typing import Union, List, Any, Optional, Tuple
 from collections import defaultdict
 
@@ -67,7 +68,7 @@ class MDPBasisClass(object):
         """
         param_dict = dict()
         param_dict["init_state"] = self.__init_state
-        param_dict["actions"] = self.__actions
+        param_dict["Env's actions"] = self.__actions
         return param_dict
 
     def get_init_state(self):
@@ -76,7 +77,7 @@ class MDPBasisClass(object):
     def get_current_state(self):
         return self.__current_state
 
-    def get_actions(self, state):
+    def get_actions(self):
         return self.__actions
 
     def get_transition_func(self):
@@ -87,6 +88,9 @@ class MDPBasisClass(object):
 
     def get_state_count(self, state):
         return self.__state_counter[state]
+
+    def get_executable_actions(self, state):
+        raise NotImplementedError
 
     # Setters
 
@@ -118,3 +122,7 @@ class MDPBasisClass(object):
     def reset(self):
         self.__current_state = self.__init_state
         return self.__current_state
+
+    def to_pickle(self, filename):
+        with open(filename, "wb") as f:
+            dill.dump(self, f)
