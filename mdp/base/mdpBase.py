@@ -52,7 +52,7 @@ class MDPBasisClass(object):
                  transition_func: Any,
                  reward_func: Any,
                  actions: Any = None):
-        self.__init_state = init_state
+        self.__init_state = copy.deepcopy(init_state)
         self.__current_state = copy.deepcopy(self.__init_state)
         self.__actions = actions
         self.__transition_func = transition_func
