@@ -33,17 +33,19 @@ def run_episodes(env, agent, step=50, episode=100, s=0, display_cb=None, display
                 print("The agent arrived at tearminal state.")
                 # print("Exit")
                 break
+
+            # update the current state
             state = next_state
 
         #############
         # Logging
         ############
-        data_list.append([e, agent.number_of_steps, cumulative_reward, s] + list(env.get_params().values()) + list(agent.get_params().values()))
-        # data_dict = {'Episode': e, 'Timestep': agent.number_of_steps, 'Cumulative Reward': cumulative_reward, 'seed': s}
-        # data_dict.update(env.get_params())
-        # data_dict.update(agent.get_params())
-        # df = df.append(pd.DataFrame.from_dict(data_dict, orient='index'), sort=True)
-    df = pd.DataFrame(data_list, columns=['Episode', 'Timestep', 'Cumulative Reward', 'seed'] + list(env.get_params().keys()) + list(agent.get_params().keys()))
+        data_list.append([e, agent.number_of_steps, cumulative_reward, s] +
+                         list(env.get_params().values()) +
+                         list(agent.get_params().values()))
+    df = pd.DataFrame(data_list, columns=['Episode', 'Timestep', 'Cumulative Reward', 'seed'] +
+                                         list(env.get_params().keys()) +
+                                         list(agent.get_params().keys()))
     df.to_csv(LOG_DIR + "{0}_{1}_{2}_fin.csv".format(agent.name, env.name, s))
     env.to_pickle(LOG_DIR + "mdp_{0}_{1}_{2}_fin.pkl".format(agent.name, env.name, s))
     agent.to_pickle(LOG_DIR + "agent_{0}_{1}_{2}_fin.pkl".format(agent.name, env.name, s))
