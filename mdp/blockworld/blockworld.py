@@ -41,11 +41,6 @@ class BlockWorld(MDPBasisClass):
         :param name: <str> name of maze
         """
 
-        if blockmap is not None:
-            self.blocks = self.make_blockworld(blockmap)
-        else:
-            self.blocks = self.convert_blockworld()
-
         self.name = name
         self.width = width
         self.height = height
@@ -57,6 +52,11 @@ class BlockWorld(MDPBasisClass):
         self.step_cost = step_cost
         self.hole_cost = hole_cost
         self.goal_reward = goal_reward
+
+        if blockmap is not None:
+            self.blocks = self.make_blockworld(blockmap)
+        else:
+            self.blocks = self.convert_blockworld()
 
         self.init_state = BlockWorldState(self.init_loc[0], self.init_loc[1])
         self.exit_flag = exit_flag
@@ -209,9 +209,9 @@ class BlockWorld(MDPBasisClass):
         :param next_state: <State>
         :return: reward <float>
         """
-        if (next_state.x, next_state.y) == self.goal_loc:
+        if (state.x, state.y) == self.goal_loc:
             return self.get_goal_reward()
-        elif (next_state.x, next_state.y) in self.holes_loc:
+        elif (state.x, state.y) in self.holes_loc:
             return -self.get_hole_cost()
         else:
             return 0 - self.step_cost

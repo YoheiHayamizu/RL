@@ -40,7 +40,7 @@ class GridWorld(MDPBasisClass):
                  door_loc=((0, 1),),
                  exit_flag=True,
                  gridmap=MAP2,
-                 step_cost=1,
+                 step_cost=0,
                  goal_reward=1):
 
         self.name = name
