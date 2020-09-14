@@ -217,4 +217,5 @@ if __name__ == "__main__":
     print(opts.mdp)
     if opts.compare == 'methods':
         METHOD = ["QLearning"]
-        reward_plots(opts.mdp, METHOD, _window=opts.window)
+        MDP = "gridworld"
+        reward_plots(MDP, METHOD, _window=opts.window)
