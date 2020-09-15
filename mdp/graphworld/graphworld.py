@@ -1,57 +1,49 @@
 from mdp.base.mdpBase import MDPBasisClass, MDPStateClass
-import mdp.graphworld.GraphWorldConstants as const
+from mdp.graphworld.config import *
 import random
 from collections import defaultdict
+import itertools
 import networkx as nx
+import json
 
 
-class MDPGraphWorld(MDPBasisClass):
+class GraphWorld(MDPBasisClass):
     def __init__(self,
-                 node_num=const.node_num,
-                 init_node=const.start_nodes[0],
-                 goal_node=const.goal_nodes[0],
-                 start_nodes=const.start_nodes,
-                 goal_nodes=const.goal_nodes,
-                 has_door_nodes=const.has_door_nodes_tuple,
-                 door_open_nodes=const.door_open_nodes_dict,
-                 door_id=const.door_id_dict,
-                 success_rate=const.env0,
+                 name="graphworld",
+                 node_num=node_num,
+                 init_node=0,
+                 goal_node=17,
+                 node_has_door=(),
+                 graphmap_path="map.json",
+                 exit_flag=True,
                  step_cost=1.0,
-                 goal_reward=const.goal_reward,
-                 stack_cost=const.stack_cost,
-                 is_goal_terminal=True,
-                 is_rand_init=False,
-                 is_rand_goal=False,
-                 name="Graphworld"
+                 goal_reward=1,
+                 stack_cost=50
                  ):
+        self.name = name
         self.node_num = node_num
-        self.nodes = [MDPGraphWorldNode(i, is_terminal=False) for i in range(self.node_num)]
-        self.success_rate = success_rate
-        self.door_id = door_id
-        self.has_door_nodes = has_door_nodes
-        self.door_open_nodes = door_open_nodes
-        self.is_goal_terminal = is_goal_terminal
-
-        self.start_states = start_nodes
-        self.goal_states = goal_nodes
         self.init_node = init_node
         self.goal_node = goal_node
-        self.is_rand_init = is_rand_init
-        self.is_rand_goal = is_rand_goal
-        self.set_rand_init()
-        self.set_rand_goal()
+        self.nodes_has_door = node_has_door
 
-        self.set_nodes()
-        self.G = self.set_graph()
+        if graphmap_path is not None:
+            self.graph, self.G = self.make_graph(graphmap_path)
+        else:
+            self.graph, self.G = self.convert_graphworld()
 
-        self.init_state = self.nodes[self.init_node]
-        self.goal_query = str(self.nodes[self.goal_node])
-        self.cur_state = self.init_state
-        self.init_actions()
+        self.num_doors = len(node_has_door)
+        self.number_of_states = (node_num - int(len(node_has_door) / 2)) * 2 ** len(node_has_door)
         self.goal_reward = goal_reward
+        self.step_cost = step_cost
         self.stack_cost = stack_cost
-        self.name = name
-        super().__init__(self.init_state, self.actions, self._transition_func, self._reward_func, step_cost)
+
+        self.init_state = GraphWorldState(self.graph[self.init_node]['node_id'],
+                                          self.graph[self.init_node]['door_id'],
+                                          self.graph[self.init_node]['door_open'],
+                                          self.graph[self.init_node]['success_rate'],
+                                          self.graph[self.init_node]['stack_rate'])
+        self.exit_flag = exit_flag
+        super().__init__(self.init_state, self._transition_func, self._reward_func, self.get_actions())
 
     def __str__(self):
         return self.name + "_n-" + str(self.node_num)
@@ -63,33 +55,46 @@ class MDPGraphWorld(MDPBasisClass):
 
     def get_params(self):
         get_params = super().get_params()
+        get_params["EnvName"] = self.name
+        get_params["init_state"] = self.get_init_state()
         get_params["node_num"] = self.node_num
-        get_params["init_state"] = self.init_state
-        get_params["goal_query"] = self.goal_query
-        get_params["goal_states"] = self.goal_states
-        get_params["start_states"] = self.start_states
-        get_params["has_door_nodes"] = self.has_door_nodes
-        get_params["cur_state"] = self.cur_state
-        get_params["is_goal_terminal"] = self.is_goal_terminal
-        get_params["success_rate"] = self.success_rate
+        get_params["init_node"] = self.init_node
+        get_params["goal_node"] = self.goal_node
+        get_params["is_goal_terminal"] = self.exit_flag
+        get_params["goal_reward"] = self.goal_reward
+        get_params["step_cost"] = self.step_cost
+        get_params["stack_cost"] = self.stack_cost
         return get_params
 
     def get_neighbor(self, node):
-        return list(self.G[node])
+        return list(self.graph[node])
 
-    def get_actions(self, state=None):
-        if state is None:
-            return self.actions
-        return self.actions[state]
+    def get_actions(self):
+        actions = defaultdict(lambda: set())
+        for node in self.graph.keys():
+            node_id, door_id, door_open, success_rate, stack_rate, adjacent = self.graph[node].values()
+            for action in ["goto", "approach", "opendoor", "gothrough"]:
+                for n in adjacent + [node_id]:
+                    actions[GraphWorldState(node_id, door_id, False)].add((action, n))
+                    actions[GraphWorldState(node_id, door_id, True)].add((action, n))
 
-    def get_nodes(self):
-        nodes = dict()
-        for node in self.nodes:
-            nodes[str(node)] = node
-        return nodes
-
-    def get_visited(self, state):
-        return self.G.nodes[state]['count']
+        #     for action in ["goto", "approach", "opendoor", "gothrough"]:
+        #         if action == "goto":
+        #             for n in adjacent:
+        #                 if self.graph[n]['door_id'] is None:
+        #                     actions[GraphWorldState(node_id, door_id, False)].add((action, n))
+        #                     actions[GraphWorldState(node_id, door_id, True)].add((action, n))
+        #         elif action == "approach":
+        #             for n in adjacent:
+        #                 if self.graph[n]['door_id'] is not None and door_id != self.graph[n]['door_id']:
+        #                     actions[GraphWorldState(node_id, door_id, False)].add((action, n))
+        #                     actions[GraphWorldState(node_id, door_id, True)].add((action, n))
+        #         elif door_id is not None and (action == "opendoor" or action == "gothrough"):
+        #             actions[GraphWorldState(node_id, door_id, False)].add((action, node_id))
+        #             actions[GraphWorldState(node_id, door_id, True)].add((action, node_id))
+        # for node, action in actions.items():
+        #     print(node, action)
+        return actions
 
     def get_stack_cost(self):
         return self.stack_cost
@@ -97,102 +102,22 @@ class MDPGraphWorld(MDPBasisClass):
     def get_goal_reward(self):
         return self.goal_reward
 
+    def get_executable_actions(self, state):
+        return self.get_actions()[state]
+
     # Setter
 
-    def init_actions(self):
-        self.actions = defaultdict(lambda: set())
-        for node in self.nodes:
-            neighbor = self.get_neighbor(node)
-            neighbor_id = [node.id for node in neighbor]
-            for a in const.ACTIONS:
-                for n in neighbor_id + [node.id]:
-                    self.actions[node.get_state()].add((a, n))
-                    node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-                    self.actions[node.get_state()].add((a, n))
-            # for a in const.ACTIONS:
-            #     if a == 'approach':
-            #         for n in neighbor_id:
-            #             if self.nodes[n].has_door() and self.nodes[node.id].has_door() and self.door_id[node.id] != \
-            #                     self.door_id[n]:
-            #                 self.actions[node.get_state()].add((a, n))
-            #                 node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-            #                 self.actions[node.get_state()].add((a, n))
-            #                 self.set_nodes()
-            #             elif self.nodes[n].has_door() and not self.nodes[node.id].has_door():
-            #                 self.actions[node.get_state()].add((a, n))
-            #                 node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-            #                 self.actions[node.get_state()].add((a, n))
-            #                 self.set_nodes()
-            #     if a == 'goto':
-            #         for n in neighbor_id:
-            #             if not self.nodes[n].has_door():
-            #                 self.actions[node.get_state()].add((a, n))
-            #                 node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-            #                 self.actions[node.get_state()].add((a, n))
-            #                 self.set_nodes()
-            #     if a == 'opendoor':
-            #         if self.nodes[node.id].has_door():
-            #             self.actions[node.get_state()].add((a, node.id))
-            #             node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-            #             self.actions[node.get_state()].add((a, node.id))
-            #             self.set_nodes()
-            #     if a == 'gothrough':
-            #         if self.nodes[node.id].has_door():
-            #             self.actions[node.get_state()].add((a, node.id))
-            #             node.set_door(node.has_door(), node.get_door_id(), not node.door_open())
-            #             self.actions[node.get_state()].add((a, node.id))
-            #             self.set_nodes()
-        self.set_nodes()
-        # for action in self.actions.keys():
-        #     print(action, self.actions[action])
-
-    def set_rand_init(self):
-        if self.is_rand_init:
-            self.init_node = random.choice(self.start_states)
-        self.init_state = self.nodes[self.init_node]
-
-    def set_rand_goal(self):
-        if self.is_rand_goal:
-            self.goal_node = random.choice(self.goal_states)
-        self.goal_query = str(self.nodes[self.goal_node])
-
-    def set_nodes(self):
-        for node in self.nodes:
-            node.is_stack = False
-        for i in self.success_rate:
-            self.nodes[i].set_slip_prob(self.success_rate[i])
-        for i in self.has_door_nodes:
-            self.nodes[i].set_door(True, self.door_id[i], self.door_open_nodes[i])
-            # print(self.nodes[i].get_state())
-
-        if self.is_goal_terminal:
-            self.nodes[self.goal_node].set_terminal(True)
-
-    def set_graph(self):
-        node = self.nodes
-        graph_dist = {node[0]: [node[1], node[2]],
-                      node[1]: [node[0], node[2], node[3]],
-                      node[2]: [node[0], node[1], node[4]],
-                      node[3]: [node[1], node[5]],
-                      node[4]: [node[2], node[8]],
-                      node[5]: [node[3], node[6], node[8]],
-                      node[6]: [node[5], node[7]],
-                      node[7]: [node[6], node[17]],
-                      node[8]: [node[4], node[5], node[9], node[11]],
-                      node[9]: [node[8], node[10]],
-                      node[10]: [node[9], node[17]],
-                      node[11]: [node[8], node[12], node[14]],
-                      node[12]: [node[11], node[13]],
-                      node[13]: [node[12], node[18]],
-                      node[14]: [node[11], node[15]],
-                      node[15]: [node[14], node[16]],
-                      node[16]: [node[15], node[18]],
-                      node[17]: [node[7], node[10], node[18]],
-                      node[18]: [node[13], node[16], node[17]]}
-
-        G = nx.Graph(graph_dist)
-        nx.set_node_attributes(G, 0, "count")
-        return G
+    def make_graph(self, graphmap):
+        with open(graphmap, 'r') as f:
+            data = json.load(f)
+        self.name = data['name']
+        graph = {}
+        graph_dict = {}
+        for datum in data['info']:
+            graph[datum['node_id']] = datum
+            graph_dict[datum['node_id']] = datum['adjacent']
+        G = nx.Graph(graph_dict)
+        return graph, G
 
     # Core
 
@@ -206,12 +131,13 @@ class MDPGraphWorld(MDPBasisClass):
         :param action: <tuple <str, id>> action discription and node id
         :return: next_state <State>
         """
-        self.G.nodes[state]['count'] += 1
+        print(state, action)
+        if action not in self.get_executable_actions(state):
+            raise Exception("Illegal action!: {} is not in {}".format(action, self.get_executable_actions(state)))
 
         if state.is_terminal():
             return state
 
-        # print(self.get_neighbor(state))
         rand = random.random()
         if state.success_rate[0] < rand and not self._is_goal_state(state):
             if action[0] == "gothrough":
@@ -233,7 +159,7 @@ class MDPGraphWorld(MDPBasisClass):
         if action[0] == "opendoor" and state == self.nodes[action[1]] and state.has_door():
             state.set_door(state.has_door(), state.get_door_id(), True)
             next_state = state
-        elif action[0] == "gothrough" and state.has_door() and state.door_open():
+        elif action[0] == "gothrough" and state.has_door() and state.get_door_state():
             for node in self.get_neighbor(state):
                 if node.get_door_id() == state.get_door_id():
                     next_state = node
@@ -248,7 +174,6 @@ class MDPGraphWorld(MDPBasisClass):
             next_state = state
             action = ("fail", action[1])
 
-        # print("current goal is {0}".format(self.goal_query))
         if next_state.success_rate[0] + next_state.success_rate[1] < rand and \
                 (action[0] == "gothrough" or action[0] == "opendoor" or action[0] == "fail") and \
                 not self._is_goal_state(next_state):
@@ -273,133 +198,127 @@ class MDPGraphWorld(MDPBasisClass):
             return 0 - self.step_cost
 
     def reset(self):
-        self.cur_state.set_terminal(False)
-        self.set_rand_init()
-        self.set_rand_goal()
-        self.set_nodes()
-        self.set_graph()
-        super().reset()
-        return self.cur_state
+        return super().reset()
 
     def print_graph(self):
         import matplotlib.pyplot as plt
-        pos = nx.spring_layout(self.G)
-        nx.draw_networkx_nodes(self.G, pos, alpha=0.9, node_size=500)
+        pos = nx.spring_layout(self.graph)
+        nx.draw_networkx_nodes(self.graph, pos, alpha=0.9, node_size=500)
         nodelist = [self.nodes[0], self.nodes[10]]
-        nx.draw_networkx_nodes(self.G, pos, nodelist=nodelist, node_color='r', alpha=0.9,
+        nx.draw_networkx_nodes(self.graph, pos, nodelist=nodelist, node_color='r', alpha=0.9,
                                node_size=500)
-        nx.draw_networkx_labels(self.G, pos)
-        nx.draw_networkx_edges(self.G, pos)
+        nx.draw_networkx_labels(self.graph, pos)
+        nx.draw_networkx_edges(self.graph, pos)
         plt.show()
 
     def save_graph_fig(self, filename="graph.png"):
         import matplotlib.pyplot as plt
         fix, ax = plt.subplots()
-        pos = nx.spring_layout(self.G)
-        nx.draw_networkx_nodes(self.G, pos, alpha=0.9, node_size=500)
+        pos = nx.spring_layout(self.graph)
+        nx.draw_networkx_nodes(self.graph, pos, alpha=0.9, node_size=500)
         nodelist = [self.nodes[0], self.nodes[10]]
-        nx.draw_networkx_nodes(self.G, pos, nodelist=nodelist, node_color='r', alpha=0.9,
+        nx.draw_networkx_nodes(self.graph, pos, nodelist=nodelist, node_color='r', alpha=0.9,
                                node_size=500)
-        nx.draw_networkx_labels(self.G, pos)
-        nx.draw_networkx_edges(self.G, pos)
+        nx.draw_networkx_labels(self.graph, pos)
+        nx.draw_networkx_edges(self.graph, pos)
         plt.savefig(filename)
         del plt
 
     def save_graph(self, filename="graph.p"):
         with open(filename, "wb") as f:
-            nx.write_gpickle(self.G, f)
+            nx.write_gpickle(self.graph, f)
 
 
-class MDPGraphWorldNode(MDPStateClass):
-    def __init__(self, id, is_terminal=False, has_door=False, door_id=None, door_open=False, success_rate=0.0):
+class GraphWorldState(MDPStateClass):
+    def __init__(self, node_id, door_id=None, door_open=None, success_rate=1.0, stack_rate=0.0,
+                 is_terminal=False):
         """
         A state in MDP
-        :param id: <str>
+        :param node_id: <str>
         :param is_terminal: <bool>
         :param has_door: <bool>
         :param success_rate: <float>
         """
-        self.id = id
-        self.success_rate = success_rate
-        self._has_door = has_door
-        self._door_open = door_open
+        self.node_id = node_id
         self._door_id = door_id
+        if door_id is not None:
+            self._door_open = door_open
+        else:
+            self._door_open = None
         self.is_stack = False
-        super().__init__(data=self.id, is_terminal=is_terminal)
+        self.success_rate = success_rate
+        self.stack_rate = stack_rate
+        super().__init__(data=(self.node_id, self._door_id, self._door_open), is_terminal=is_terminal)
 
     def __hash__(self):
         return hash(self.data)
 
     def __str__(self):
-        return "s{0}".format(self.id)
+        if self.has_door():
+            return "s{0}_d{1}_{2}".format(self.node_id, self._door_id, self._door_open)
+        else:
+            return "s{0}".format(self.node_id)
 
     def __repr__(self):
         return self.__str__()
 
     def __eq__(self, other):
-        assert isinstance(other, MDPGraphWorldNode), "Arg object is not in" + type(self).__module__
-        return self.id == other.id
+        assert isinstance(other, GraphWorldState), "Arg object is not in" + type(self).__module__
+        return self.node_id == other.node_id
 
     def get_param(self):
         params_dict = dict()
-        params_dict["id"] = self.id
-        params_dict["success_rate"] = self.success_rate
-        params_dict["has_door"] = self._has_door
+        params_dict["id"] = self.node_id
         params_dict["door_open"] = self._door_open
         params_dict["door_id"] = self._door_id
+        params_dict["success_rate"] = self.success_rate
         return params_dict
 
-    def get_slip_prob(self):
+    def get_success_rate(self):
         return self.success_rate
 
     def get_door_id(self):
         return self._door_id
 
-    def get_state(self):
+    def get_door_state(self):
         if self.has_door():
-            if self.door_open():
-                return "s{0}_d{1}_True".format(self.id, self._door_id)
-            else:
-                return "s{0}_d{1}_False".format(self.id, self._door_id)
+            return self._door_open
         else:
-            return "s{0}".format(self.id)
+            raise Exception("This state does not have a door.")
 
     def get_is_stack(self):
         return self.is_stack
 
-    def set_slip_prob(self, new_slip_prob):
-        self.success_rate = new_slip_prob
-
     def has_door(self):
-        return self._has_door
+        if self._door_id is not None:
+            return True
+        return False
 
-    def door_open(self):
-        return self._door_open
+    def set_success_rate(self, new_success_rate):
+        self.success_rate = new_success_rate
 
-    def set_door(self, has_door, door_id, door_open):
-        self._has_door = has_door
+    def set_door(self, door_id, door_open):
         self._door_id = door_id
         self._door_open = door_open
 
 
 if __name__ == "__main__":
-    Graph_world = MDPGraphWorld(is_rand_init=False,
-                                step_cost=1.0,
-                                success_rate=const.env1)
-    observation = Graph_world.reset()
-    # Graph_world.print_graph()
-    for t in range(1000):
-        # print(Graph_world.get_actions())
-        # print(observation.get_cur_state().get_state())
-        # print(Graph_world.get_actions(observation.get_cur_state().get_state()))
-        random_action = (random.choice(list(Graph_world.get_actions(observation.get_state()))))
-        print(observation.get_state(), random_action, end=" ")
-        observation, reward, done, info = Graph_world.step(random_action)
-        # print(observation.get_cur_state().is_terminal(), done)
-        # print(observation.get_params())
+    ###########################
+    # GET THE GRIDWORLD
+    ###########################
+    env = GraphWorld()
+    observation = env.reset()
+    ACTIONS = env.get_executable_actions(observation)
+    print(ACTIONS)
+    random_action = random.sample(ACTIONS, 1)[0]
+
+    for t in range(500):
+        # if random_action == "opendoor":
+        print(observation, env.get_state_count(observation), random_action)
+        observation, reward, done, info = env.step(random_action)
+        random_action = random.choice(ACTIONS)
         if done:
-            print("Goal!")
-            print(observation.is_stack)
-            print(Graph_world.get_params())
-            break
-        print(observation.get_state())
+            print("The agent arrived at tearminal state.")
+            # print(observation.get_params())
+            print("Exit")
+            exit()
