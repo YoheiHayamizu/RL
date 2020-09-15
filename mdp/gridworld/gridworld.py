@@ -231,6 +231,10 @@ class GridWorldState(MDPStateClass):
         self.success_rate = 0.95
         super().__init__(data=(self.x, self.y, self.doors), is_terminal=is_terminal)
 
+    def get_param(self):
+        params_dict = dict()
+        params_dict["success_rate"] = self.success_rate
+
     def __str__(self):
         return "pos({0}, {1}, {2})".format(self.x, self.y, self.doors)
 
