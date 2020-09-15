@@ -1,5 +1,5 @@
 from mdp.base.mdpBase import MDPBasisClass, MDPStateClass
-import mdp.GraphWorldConstants as const
+import mdp.graphworld.GraphWorldConstants as const
 import random
 from collections import defaultdict
 import networkx as nx
