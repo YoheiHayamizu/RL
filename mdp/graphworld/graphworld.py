@@ -1,5 +1,4 @@
 from mdp.base.mdpBase import MDPBasisClass, MDPStateClass
-from mdp.graphworld.config import *
 import random
 from collections import defaultdict
 import itertools
@@ -10,7 +9,7 @@ import json
 class GraphWorld(MDPBasisClass):
     def __init__(self,
                  name="graphworld",
-                 node_num=node_num,
+                 node_num=19,
                  init_node=0,
                  goal_node=17,
                  node_has_door=(),
@@ -110,12 +109,13 @@ class GraphWorld(MDPBasisClass):
     def make_graph(self, graphmap):
         with open(graphmap, 'r') as f:
             data = json.load(f)
-        self.name = data['name']
         graph = {}
         graph_dict = {}
         for datum in data['info']:
             graph[datum['node_id']] = datum
             graph_dict[datum['node_id']] = datum['adjacent']
+        self.name = data['name']
+        self.node_num = len(graph_dict)
         G = nx.Graph(graph_dict)
         return graph, G
 
