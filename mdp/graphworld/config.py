@@ -1,11 +1,11 @@
 import numpy as np
 
-ROUND_OFF = 5
 ACTIONS = ["goto", "approach", "opendoor", "gothrough"]
 
 
 def distance(x1, y1, x2, y2):
     return np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
 
 
 node_num = 19
@@ -90,4 +90,3 @@ env2 = {0: [0.9, 0.1, 0.0],
         16: [0.8, 0.2, 0.0],
         17: [0.8, 0.2, 0.0],
         18: [0.9, 0.1, 0.0]}
-
