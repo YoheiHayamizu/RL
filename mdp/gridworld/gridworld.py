@@ -131,8 +131,8 @@ class GridWorld(MDPBasisClass):
         :return: next_state <State>
         """
 
-        if action not in self.get_actions():
-            raise Exception("Illegal action!: {} is not in {}".format(action, self.get_actions()))
+        if action not in self.get_executable_actions(state):
+            raise Exception("Illegal action!: {} is not in {}".format(action, self.get_executable_actions(state)))
 
         if state.is_terminal():
             return state
@@ -141,7 +141,7 @@ class GridWorld(MDPBasisClass):
 
         if state.success_rate < random.random():
             # print("slip action: ")
-            action = random.choice(self.get_actions())
+            action = random.choice(self.get_executable_actions(state))
 
         if action == "north":
             next_state = GridWorldState(x, min(y + 1, self.num_rows - 1), self.door_loc, is_terminal=False)
