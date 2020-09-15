@@ -2,7 +2,7 @@
 datas/
 .idea/
 .DS_Store
-.p
+*.p
 
 # Prerequisites
 .d
