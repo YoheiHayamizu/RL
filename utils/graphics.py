@@ -188,7 +188,7 @@ def parseOptions():
     import optparse
     optParser = optparse.OptionParser()
     optParser.add_option('-w', '--window', action='store',
-                         type='int', dest='window', default=1,
+                         type='int', dest='window', default=50,
                          help='Window size (default %default)')
     optParser.add_option('-a', '--agent', action='store', metavar="A",
                          type='string', dest='agent', default="gdq",
@@ -217,5 +217,7 @@ if __name__ == "__main__":
     print(opts.mdp)
     if opts.compare == 'methods':
         METHOD = ["QLearning"]
-        MDP = "gridworld"
+        MDP = "graphmap_uncertainty"
+        # MDP = "stationary"
+        # MDP = "blockworld"
         reward_plots(MDP, METHOD, _window=opts.window)
