@@ -100,7 +100,9 @@ class BlockWorld(MDPBasisClass):
     def get_holes_loc(self):
         return self.holes_loc
 
-    def get_executable_actions(self, state):
+    def get_executable_actions(self, state=None):
+        if state is None:
+            return self.get_executable_actions(self.init_state)
         return self.get_actions()
 
     # Setter

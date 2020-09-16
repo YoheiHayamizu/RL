@@ -69,13 +69,13 @@ class GraphWorld(MDPBasisClass):
         return self.graph[node_id]['adjacent']
 
     def get_actions(self):
-        actions = defaultdict(lambda: list())
+        actions = defaultdict(lambda: set())
         for node in self.graph.keys():
             node_id, door_id, door_open, success_rate, stack_rate, adjacent = self.graph[node].values()
             for action in ["goto", "approach", "opendoor", "gothrough"]:
                 for n in adjacent + [node_id]:
-                    actions[GraphWorldState(node_id, door_id, False)].append((action, n))
-                    actions[GraphWorldState(node_id, door_id, True)].append((action, n))
+                    actions[GraphWorldState(node_id, door_id, False)].add((action, n))
+                    actions[GraphWorldState(node_id, door_id, True)].add((action, n))
 
         #     for action in ["goto", "approach", "opendoor", "gothrough"]:
         #         if action == "goto":
@@ -101,8 +101,10 @@ class GraphWorld(MDPBasisClass):
     def get_goal_reward(self):
         return self.goal_reward
 
-    def get_executable_actions(self, state):
-        return self.get_actions()[state]
+    def get_executable_actions(self, state=None):
+        if state is None:
+            return self.get_executable_actions(self.init_state)
+        return list(self.get_actions()[state])
 
     # Setter
 
@@ -127,6 +129,9 @@ class GraphWorld(MDPBasisClass):
         self.node_num = len(graph_dict)
         G = nx.Graph(graph_dict)
         return graph, G
+
+    def convert_graphworld(self):
+        raise NotImplementedError
 
     # Core
 
@@ -286,12 +291,14 @@ class GraphWorld(MDPBasisClass):
 class GraphWorldState(MDPStateClass):
     def __init__(self, node_id, door_id=None, door_open=None, success_rate=1.0, stack_rate=0.0,
                  is_terminal=False):
-        """
-        A state in MDP
-        :param node_id: <str>
-        :param is_terminal: <bool>
-        :param has_door: <bool>
-        :param success_rate: <float>
+        """ Inheritance of MDPStateClass for graphworld
+
+        :param node_id:
+        :param door_id:
+        :param door_open:
+        :param success_rate:
+        :param stack_rate:
+        :param is_terminal:
         """
         self.node_id = node_id
         self.door_id = door_id

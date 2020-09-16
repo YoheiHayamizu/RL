@@ -89,7 +89,7 @@ class MDPBasisClass(object):
     def get_state_count(self, state):
         return self.__state_counter[state]
 
-    def get_executable_actions(self, state):
+    def get_executable_actions(self, state=None):
         raise NotImplementedError
 
     # Setters

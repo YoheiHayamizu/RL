@@ -98,7 +98,9 @@ class GridWorld(MDPBasisClass):
     def get_doors_loc(self):
         return self.door_loc
 
-    def get_executable_actions(self, state):
+    def get_executable_actions(self, state=None):
+        if state is None:
+            return self.get_executable_actions(self.init_state)
         return self.get_actions()
 
     # Setter
