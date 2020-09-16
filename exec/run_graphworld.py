@@ -17,9 +17,12 @@ def run_episodes(env, agent, step=50, episode=100, s=0, display_cb=None, display
         cumulative_reward = 0.0
         print("-------- new episode: {0:02} starts --------".format(e))
         for t in range(0, step):
+            # agent update actions which can be selected at this step
+            agent.set_actions(env.get_executable_actions(state))
             # agent selects an action
             action = agent.act(state)
             # print(state, action)
+
             # EXECUTE ACTION
             next_state, reward, done, info = env.step(action)
             # agent updates values
@@ -73,11 +76,12 @@ if __name__ == "__main__":
     )
     env.set_step_cost(1.0)
     env.set_goal_reward(50.0)
+    env.set_stack_cost(50.0)
 
     ###########################
     # GET THE AGENT
     ###########################
-    qlearning = QLearningAgent(name="QLearning", actions=env.get_actions())
+    qlearning = QLearningAgent(name="QLearning", actions=env.get_executable_actions())
 
     ###########################
     # RUN

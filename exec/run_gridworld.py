@@ -16,6 +16,8 @@ def run_episodes(env, agent, step=50, episode=100, s=0, display_cb=None, display
         agent.reset_of_episode()
         cumulative_reward = 0.0
         for t in range(1, step):
+            # agent update actions which can be selected at this step
+            agent.set_actions(env.get_executable_actions(state))
             # agent selects an action
             action = agent.act(state)
             # EXECUTE ACTION
@@ -75,7 +77,7 @@ if __name__ == "__main__":
     ###########################
     # GET THE AGENT
     ###########################
-    qlearning = QLearningAgent(name="QLearning", actions=env.get_actions())
+    qlearning = QLearningAgent(name="QLearning", actions=env.get_executable_actions())
 
     ###########################
     # RUN
