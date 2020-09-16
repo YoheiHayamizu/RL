@@ -1,7 +1,7 @@
 from mdp.base.mdpBase import MDPBasisClass, MDPStateClass
+from mdp.graphworld.config import *
 import random
 from collections import defaultdict
-import itertools
 import networkx as nx
 import json
 
@@ -13,7 +13,7 @@ class GraphWorld(MDPBasisClass):
                  init_node=0,
                  goal_node=17,
                  node_has_door=(),
-                 graphmap_path="map.json",
+                 graphmap_path=MAP_PATH + "map.json",
                  exit_flag=True,
                  step_cost=1.0,
                  goal_reward=1,
@@ -69,13 +69,13 @@ class GraphWorld(MDPBasisClass):
         return self.graph[node_id]['adjacent']
 
     def get_actions(self):
-        actions = defaultdict(lambda: set())
+        actions = defaultdict(lambda: list())
         for node in self.graph.keys():
             node_id, door_id, door_open, success_rate, stack_rate, adjacent = self.graph[node].values()
             for action in ["goto", "approach", "opendoor", "gothrough"]:
                 for n in adjacent + [node_id]:
-                    actions[GraphWorldState(node_id, door_id, False)].add((action, n))
-                    actions[GraphWorldState(node_id, door_id, True)].add((action, n))
+                    actions[GraphWorldState(node_id, door_id, False)].append((action, n))
+                    actions[GraphWorldState(node_id, door_id, True)].append((action, n))
 
         #     for action in ["goto", "approach", "opendoor", "gothrough"]:
         #         if action == "goto":
@@ -105,6 +105,15 @@ class GraphWorld(MDPBasisClass):
         return self.get_actions()[state]
 
     # Setter
+
+    def set_goal_reward(self, new_goal_reward):
+        self.goal_reward = new_goal_reward
+
+    def set_step_cost(self, new_step_cost):
+        self.step_cost = new_step_cost
+
+    def set_stack_cost(self, new_stack_cost):
+        self.stack_cost = new_stack_cost
 
     def make_graph(self, graphmap):
         with open(graphmap, 'r') as f:
@@ -146,12 +155,12 @@ class GraphWorld(MDPBasisClass):
                 action = ("fail", action[1])
 
             if action[0] == "approach":
-                miss = random.choice(self.get_adjacent(state))
-                action = ("approach", miss.id)
+                miss = random.choice(self.get_adjacent(state.get_node_id()))
+                action = ("approach", miss)
 
             if action[0] == "goto":
-                miss = random.choice(self.get_adjacent(state))
-                action = ("goto", miss.id)
+                miss = random.choice(self.get_adjacent(state.get_node_id()))
+                action = ("goto", miss)
 
         next_state = state
 
@@ -176,7 +185,7 @@ class GraphWorld(MDPBasisClass):
             next_state = state
             action = ("fail", n)
 
-        if next_state.stack_rate > rand and (
+        if next_state.success_rate < rand < next_state.success_rate + next_state.stack_rate and (
                 a == "gothrough" or a == "opendoor" or a == "fail") and not self.is_goal_state(next_state):
             next_state.is_stack = True
             next_state.set_terminal(True)

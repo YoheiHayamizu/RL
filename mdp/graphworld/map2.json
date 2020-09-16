@@ -1,5 +1,5 @@
 {
-  "name": "uncertainty",
+  "name": "graphmap_uncertainty",
   "info": [
     {"node_id": 0, "door_id": null, "door_open": null, "success_rate": 0.9, "stack_rate": 0.0, "adjacent": [1, 2]},
     {"node_id": 1, "door_id": 0, "door_open": false, "success_rate": 0.6, "stack_rate": 0.1, "adjacent": [0, 2, 3]},
