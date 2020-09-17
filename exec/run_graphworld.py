@@ -35,7 +35,7 @@ def run_episodes(env, agent, step=50, episode=100, s=0, display_cb=None, display
 
             # END IF DONE
             if done:
-                print("The agent arrived at tearminal state.")
+                # print("The agent arrived at tearminal state.")
                 # print("Exit")
                 break
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     ###########################
     # GET THE AGENT
     ###########################
-    qlearning = QLearningAgent(name="QLearning", actions=env.get_executable_actions())
+    qlearning = QLearningAgent(name="QLearning", gamma=0.95, actions=env.get_executable_actions())
 
     ###########################
     # RUN
