@@ -4,6 +4,7 @@ from mdp.base.mdpBase import MDPBasisClass, MDPStateClass
 from collections import namedtuple
 import numpy as np
 import random
+import copy
 
 ACTIONS = ["north", "south", "west", "east", "opendoor"]
 
@@ -48,12 +49,14 @@ class GridWorld(MDPBasisClass):
         self.num_columns = num_columns
         self.init_loc = init_loc
         self.goal_loc = goal_loc
-        self.door_loc = {"D_{0}{1}".format(i[0], i[1]): 0 for i in door_loc}
 
         if gridmap is not None:
             self.grid = self.make_gridworld(gridmap)
         else:
             self.grid = self.convert_gridworld()
+            self.door_loc = {"D_{0}{1}".format(i[0], i[1]): 0 for i in door_loc}
+
+        self.init_door_loc = copy.deepcopy(self.door_loc)
 
         self.num_doors = len(door_loc)
         # row * columns * (open/close) ** doors
@@ -123,6 +126,7 @@ class GridWorld(MDPBasisClass):
     # Core
 
     def reset(self):
+        self.door_loc = self.init_door_loc
         return super().reset()
 
     def _transition_func(self, state, action):

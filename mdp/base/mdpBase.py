@@ -120,7 +120,7 @@ class MDPBasisClass(object):
         return next_state, reward, done, self.get_params()
 
     def reset(self):
-        self.__current_state = self.__init_state
+        self.__current_state = copy.deepcopy(self.__init_state)
         return self.__current_state
 
     def to_pickle(self, filename):

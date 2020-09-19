@@ -1,9 +1,11 @@
 from mdp.base.mdpBase import MDPBasisClass, MDPStateClass
 from mdp.graphworld.config import *
-import random
 from collections import defaultdict
+import random
 import networkx as nx
 import json
+import copy
+import matplotlib.pyplot as plt
 
 
 class GraphWorld(MDPBasisClass):
@@ -29,6 +31,7 @@ class GraphWorld(MDPBasisClass):
             self.graph, self.G = self.make_graph(graphmap_path)
         else:
             self.graph, self.G = self.convert_graphworld()
+        self.init_graph = self.graph
 
         self.num_doors = len(node_has_door)
         self.number_of_states = (node_num - int(len(node_has_door) / 2)) * 2 ** len(node_has_door)
@@ -77,20 +80,20 @@ class GraphWorld(MDPBasisClass):
                     actions[GraphWorldState(node_id, door_id, False)].add((action, n))
                     actions[GraphWorldState(node_id, door_id, True)].add((action, n))
 
-        #     for action in ["goto", "approach", "opendoor", "gothrough"]:
-        #         if action == "goto":
-        #             for n in adjacent:
-        #                 if self.graph[n]['door_id'] is None:
-        #                     actions[GraphWorldState(node_id, door_id, False)].add((action, n))
-        #                     actions[GraphWorldState(node_id, door_id, True)].add((action, n))
-        #         elif action == "approach":
-        #             for n in adjacent:
-        #                 if self.graph[n]['door_id'] is not None and door_id != self.graph[n]['door_id']:
-        #                     actions[GraphWorldState(node_id, door_id, False)].add((action, n))
-        #                     actions[GraphWorldState(node_id, door_id, True)].add((action, n))
-        #         elif door_id is not None and (action == "opendoor" or action == "gothrough"):
-        #             actions[GraphWorldState(node_id, door_id, False)].add((action, node_id))
-        #             actions[GraphWorldState(node_id, door_id, True)].add((action, node_id))
+            # for action in ["goto", "approach", "opendoor", "gothrough"]:
+            #     if action == "goto":
+            #         for n in adjacent:
+            #             if self.graph[n]['door_id'] is None:
+            #                 actions[GraphWorldState(node_id, door_id, False)].add((action, n))
+            #                 actions[GraphWorldState(node_id, door_id, True)].add((action, n))
+            #     elif action == "approach":
+            #         for n in adjacent:
+            #             if self.graph[n]['door_id'] is not None and door_id != self.graph[n]['door_id']:
+            #                 actions[GraphWorldState(node_id, door_id, False)].add((action, n))
+            #                 actions[GraphWorldState(node_id, door_id, True)].add((action, n))
+            #     elif door_id is not None and (action == "opendoor" or action == "gothrough"):
+            #         actions[GraphWorldState(node_id, door_id, False)].add((action, node_id))
+            #         actions[GraphWorldState(node_id, door_id, True)].add((action, node_id))
         # for node, action in actions.items():
         #     print(node, action)
         return actions
@@ -116,6 +119,12 @@ class GraphWorld(MDPBasisClass):
 
     def set_stack_cost(self, new_stack_cost):
         self.stack_cost = new_stack_cost
+
+    def set_door_open(self, node_id):
+        self.graph[node_id]['door_open'] = True
+        for node in self.graph[node_id]['adjacent']:
+            if self.graph[node]['door_id'] == self.graph[node_id]['door_id']:
+                self.graph[node]['door_open'] = True
 
     def make_graph(self, graphmap):
         with open(graphmap, 'r') as f:
@@ -145,57 +154,54 @@ class GraphWorld(MDPBasisClass):
         :param action: <tuple <str, id>> action discription and node id
         :return: next_state <State>
         """
+
         if action not in self.get_executable_actions(state):
             raise Exception("Illegal action!: {} is not in {}".format(action, self.get_executable_actions(state)))
 
         if state.is_terminal():
             return state
 
-        rand = random.random()
-        if state.success_rate + state.stack_rate < rand and not self.is_goal_state(state):
-            if action[0] == "gothrough":
-                action = ("fail", action[1])
-
-            if action[0] == "opendoor":
-                action = ("fail", action[1])
-
-            if action[0] == "approach":
-                miss = random.choice(self.get_adjacent(state.get_node_id()))
-                action = ("approach", miss)
-
-            if action[0] == "goto":
-                miss = random.choice(self.get_adjacent(state.get_node_id()))
-                action = ("goto", miss)
-
-        next_state = state
-
         a, n = action
-        if a == "opendoor" and state.get_node_id() == self.graph[n]['node_id'] and state.has_door():
-            self.graph[n]['door_open'] = True
-            next_state = GraphWorldState(n, self.graph[n]['door_id'], self.graph[n]['door_open'],
-                                         self.graph[n]['success_rate'], self.graph[n]['stack_rate'])
-        elif a == "gothrough" and state.has_door() and state.get_door_state():
-            for node in self.graph[n]['adjacent']:
-                if self.graph[node]['door_id'] == state.get_door_id():
-                    next_state = GraphWorldState(node, self.graph[node]['door_id'], self.graph[node]['door_open'],
-                                                 self.graph[node]['success_rate'], self.graph[node]['stack_rate'])
-        elif a == "approach" and self.graph[n]['door_id'] is not None and state.get_door_id() != self.graph[n][
-            'door_id']:
-            next_state = GraphWorldState(n, self.graph[n]['door_id'], self.graph[n]['door_open'],
-                                         self.graph[n]['success_rate'], self.graph[n]['stack_rate'])
+        rand = random.random()
+        if state.success_rate < rand and not self.is_goal_state(state):
+            if a == "gothrough" or a == "opendoor":
+                a = "fail"
+            if a == "approach" or a == "goto":
+                miss = random.choice(self.get_adjacent(state.get_node_id()))
+                n = miss
+
+        if 1 - state.stack_rate < rand and (
+                a == "gothrough" or a == "opendoor" or a == "fail") and not self.is_goal_state(state):
+            state.is_stack = True
+            state.set_terminal(True)
+            print("stacked")
+            return state
+
+        node_id, door_id, door_open, success_rate, stack_rate, adjacent = self.graph[n].values()
+        if a == "opendoor"and state.has_door() and state.get_node_id() == node_id:
+            self.set_door_open(n)
+            node_id, door_id, door_open, success_rate, stack_rate, adjacent = self.graph[n].values()
+            next_state = GraphWorldState(node_id, door_id, door_open, success_rate, stack_rate)
+
+        elif a == "gothrough" and state.has_door() and state.get_door_state() and state.get_node_id() == node_id:
+            next_node = None
+            for node in adjacent:
+                if self.graph[node]['door_id'] == door_id:
+                    next_node = node
+            n_node_id, n_door_id, n_door_open, n_success_rate, n_stack_rate, _ = self.graph[next_node].values()
+            next_state = GraphWorldState(n_node_id, n_door_id, n_door_open, n_success_rate, n_stack_rate)
+
+        elif a == "approach" and door_id is not None and state.get_door_id() != door_id:
+            next_state = GraphWorldState(node_id, door_id, door_open, success_rate, stack_rate)
+
         elif a == "goto" and self.graph[n]['door_id'] is None:
-            next_state = GraphWorldState(n, self.graph[n]['door_id'], self.graph[n]['door_open'],
-                                         self.graph[n]['success_rate'], self.graph[n]['stack_rate'])
+            next_state = GraphWorldState(node_id, door_id, door_open, success_rate, stack_rate)
+
         else:
             next_state = state
-            action = ("fail", n)
-
-        if next_state.success_rate < rand < next_state.success_rate + next_state.stack_rate and (
-                a == "gothrough" or a == "opendoor" or a == "fail") and not self.is_goal_state(next_state):
-            next_state.is_stack = True
-            next_state.set_terminal(True)
 
         if self.is_goal_state(next_state) and self.exit_flag:
+            print("goal")
             next_state.set_terminal(True)
 
         return next_state
@@ -211,34 +217,35 @@ class GraphWorld(MDPBasisClass):
         if self.is_goal_state(state):
             return self.get_goal_reward()
         elif state.get_is_stack():
-            return - self.get_stack_cost()
+            return 0 - self.get_stack_cost()
         else:
-            return - self.step_cost
+            return 0 - self.step_cost
 
     def reset(self):
+        self.graph = copy.deepcopy(self.init_graph)
         return super().reset()
 
     def print_graph(self):
-        import matplotlib.pyplot as plt
+        # In order to fix the graph layout for "map.json" and "map2.json"
         pos = nx.spring_layout(self.G, pos={0: [-0.8540059, 0.98151456],
-                                             1: [-0.85041632, 0.73686487],
-                                             2: [-0.62514745, 0.8359094],
-                                             3: [-0.76355886, 0.40821448],
-                                             4: [-0.32916205, 0.59689845],
-                                             5: [-0.49406721, 0.11968062],
-                                             6: [-0.49863244, -0.28250672],
-                                             7: [-0.28264265, -0.58982159],
-                                             8: [-0.09594634, 0.2363157],
-                                             9: [-0.07191173, -0.08622657],
-                                             10: [-0.0169109, -0.41152061],
-                                             11: [0.39693677, 0.13289499],
-                                             12: [0.5717122, -0.11621789],
-                                             13: [0.62289137, -0.4189907],
-                                             14: [0.7954032, 0.02493817],
-                                             15: [1., -0.26606676],
-                                             16: [0.87920069, -0.57667969],
-                                             17: [0.09609302, -0.66380614],
-                                             18: [0.52016459, -0.66139458]})
+                                            1: [-0.85041632, 0.73686487],
+                                            2: [-0.62514745, 0.8359094],
+                                            3: [-0.76355886, 0.40821448],
+                                            4: [-0.32916205, 0.59689845],
+                                            5: [-0.49406721, 0.11968062],
+                                            6: [-0.49863244, -0.28250672],
+                                            7: [-0.28264265, -0.58982159],
+                                            8: [-0.09594634, 0.2363157],
+                                            9: [-0.07191173, -0.08622657],
+                                            10: [-0.0169109, -0.41152061],
+                                            11: [0.39693677, 0.13289499],
+                                            12: [0.5717122, -0.11621789],
+                                            13: [0.62289137, -0.4189907],
+                                            14: [0.7954032, 0.02493817],
+                                            15: [1., -0.26606676],
+                                            16: [0.87920069, -0.57667969],
+                                            17: [0.09609302, -0.66380614],
+                                            18: [0.52016459, -0.66139458]})
         nx.draw_networkx_nodes(self.G, pos, node_color='black', alpha=0.7, node_size=400)
         nx.draw_networkx_edges(self.G, pos)
         nx.draw_networkx_nodes(self.G, pos, nodelist=[self.init_node], node_color='b', alpha=0.9, node_size=400)
@@ -246,32 +253,32 @@ class GraphWorld(MDPBasisClass):
         nx.draw_networkx_nodes(self.G, pos, nodelist=[self.get_current_state().get_node_id()], node_color='yellow',
                                alpha=0.9, node_size=200)
         nx.draw_networkx_labels(self.G, pos, font_color='white')
-        plt.pause(0.01)
+        plt.pause(0.0001)
         # plt.show()
         plt.clf()
 
     def save_graph_fig(self, filename="graph.png"):
-        import matplotlib.pyplot as plt
         fix, ax = plt.subplots()
+        # In order to fix the graph layout for "map.json" and "map2.json"
         pos = nx.spring_layout(self.G, pos={0: [-0.8540059, 0.98151456],
-                                             1: [-0.85041632, 0.73686487],
-                                             2: [-0.62514745, 0.8359094],
-                                             3: [-0.76355886, 0.40821448],
-                                             4: [-0.32916205, 0.59689845],
-                                             5: [-0.49406721, 0.11968062],
-                                             6: [-0.49863244, -0.28250672],
-                                             7: [-0.28264265, -0.58982159],
-                                             8: [-0.09594634, 0.2363157],
-                                             9: [-0.07191173, -0.08622657],
-                                             10: [-0.0169109, -0.41152061],
-                                             11: [0.39693677, 0.13289499],
-                                             12: [0.5717122, -0.11621789],
-                                             13: [0.62289137, -0.4189907],
-                                             14: [0.7954032, 0.02493817],
-                                             15: [1., -0.26606676],
-                                             16: [0.87920069, -0.57667969],
-                                             17: [0.09609302, -0.66380614],
-                                             18: [0.52016459, -0.66139458]})
+                                            1: [-0.85041632, 0.73686487],
+                                            2: [-0.62514745, 0.8359094],
+                                            3: [-0.76355886, 0.40821448],
+                                            4: [-0.32916205, 0.59689845],
+                                            5: [-0.49406721, 0.11968062],
+                                            6: [-0.49863244, -0.28250672],
+                                            7: [-0.28264265, -0.58982159],
+                                            8: [-0.09594634, 0.2363157],
+                                            9: [-0.07191173, -0.08622657],
+                                            10: [-0.0169109, -0.41152061],
+                                            11: [0.39693677, 0.13289499],
+                                            12: [0.5717122, -0.11621789],
+                                            13: [0.62289137, -0.4189907],
+                                            14: [0.7954032, 0.02493817],
+                                            15: [1., -0.26606676],
+                                            16: [0.87920069, -0.57667969],
+                                            17: [0.09609302, -0.66380614],
+                                            18: [0.52016459, -0.66139458]})
         nx.draw_networkx_nodes(self.G, pos, node_color='black', alpha=0.7, node_size=400)
         nx.draw_networkx_edges(self.G, pos)
         nx.draw_networkx_nodes(self.G, pos, nodelist=[self.init_node], node_color='b', alpha=0.9, node_size=400)
@@ -379,10 +386,11 @@ if __name__ == "__main__":
         observation, reward, done, info = env.step(random_action)
         ACTIONS = env.get_executable_actions(observation)
         random_action = random.sample(ACTIONS, 1)[0]
-        env.print_graph()
+        # env.print_graph()
+        print(observation, reward, done)
         if done:
-            env.save_graph_fig()
-            print("The agent arrived at tearminal state.")
+            # env.save_graph_fig()
+            # print("The agent arrived at tearminal state.")
             # print(observation.get_params())
             print("Exit")
             exit()

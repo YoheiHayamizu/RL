@@ -176,6 +176,7 @@ class BlockWorld(MDPBasisClass):
 
         new_x, new_y = next_state.x, next_state.y
         if ((new_x, new_y) in self.holes_loc or (new_x, new_y) == self.goal_loc) and self.exit_flag:
+            print("goal")
             next_state.set_terminal(True)
         return next_state
 
@@ -306,13 +307,16 @@ if __name__ == "__main__":
     env.set_goal_reward(50.0)
     observation = env.reset()
     env.print_blockworld()
-    for t in range(10):
-        random_action = random.choice(ACTIONS)
+    random_action = random.choice(ACTIONS)
+
+    for t in range(500):
         print(observation, env.get_state_count(observation), random_action)
+        random_action = random.choice(ACTIONS)
         observation, reward, done, info = env.step(random_action)
+        print(observation, reward, done)
         if done:
             print("The agent arrived at tearminal state.")
             print(env.get_params())
             print("Exit")
             exit()
-        env.print_blockworld()
+        # env.print_blockworld()
