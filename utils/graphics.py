@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib
 import pandas as pd
 import matplotlib.pyplot as plt
-from exec.config import *
+from exe.config import *
 import dill
 from collections import defaultdict
 import seaborn as sns
@@ -166,24 +166,6 @@ def reward_plots(_mdp, _agent, _window=50):
     line_graph(data, x="Episode", y="Cumulative Reward", hue="AgentName",
                filename=FIG_DIR + "REWARD_{0}.pdf".format(_mdp))
 
-
-# def _load(_mdp, _agent):
-#     import glob
-#     # print(LOG_DIR + "mdp_{0}_{1}*fin.pkl".format(_agent, _mdp))
-#     pkls = glob.glob(LOG_DIR + "mdp_{0}_{1}*fin.pkl".format(_agent, _mdp))
-#     print(pkls)
-#     df_dict = defaultdict(pd.DataFrame)
-#     count_df = None
-#     for i, pkl in enumerate(pkls):
-#         with open(pkl, "rb") as f:
-#             _mdp = dill.load(f)
-#         count_df = get_count_state(_mdp)
-#         # set episode as index
-#         count_df = count_df.set_index('episode')
-#         df_dict[i] = count_df
-#     return sum(df_dict.values()) / len(pkls)
-
-
 def parseOptions():
     import optparse
     optParser = optparse.OptionParser()
@@ -191,33 +173,30 @@ def parseOptions():
                          type='int', dest='window', default=50,
                          help='Window size (default %default)')
     optParser.add_option('-a', '--agent', action='store', metavar="A",
-                         type='string', dest='agent', default="gdq",
-                         help='Agent type (options are \'q-learning\', \'sarsa\', \'rmax\', \'dynaq\' default %default)')
-    optParser.add_option('--mdp', action='store', metavar="M",
+                         type='string', dest='agent', default="Q-Learning",
+                         help='Agent type '
+                              '(options are \'q-learning\', \'sarsa\', \'rmax\', \'dynaq\' default %default)')
+    optParser.add_option('--mdp', action='store', metavar="MDP",
                          type='string', dest='mdp', default="blockworld",
-                         help='MDP name (options are \'taxiEnv\' default %default)')
+                         help='MDP name '
+                              '(options are \'graphmap_uncertainty \'stationary \'gridworld\' default %default)')
     optParser.add_option('-c', '--compare', action='store', metavar="C",
                          type='string', dest='compare', default="methods",
                          help='compare option (options are \'variables\', \'methods\', and \'both\' default %default)')
     optParser.add_option('-x', '--xlabel', action='store', metavar="C",
                          type='string', dest='xlabel', default="gamma",
-                         help='xlabel option (options are \'gamma\', \'alpha\', \'epsilon\', \'rmax\', \'ucount\', and \'lookahead\' default %default)')
+                         help='xlabel option '
+                              '(options are \'gamma\', \'alpha\', \'epsilon\', \'rmax\', \'ucount\', and \'lookahead\' '
+                              'default %default)')
     optParser.add_option('-p', '--prefix', action='store', metavar="P",
                          type='string', dest='prefix', default="",
                          help='filename prefix')
 
-    opts, args = optParser.parse_args()
-
-    return opts
+    return optParser.parse_args()
 
 
 if __name__ == "__main__":
-    opts = parseOptions()
-    # visited_plots("gridworld_v2", 'QLearning')
+    opts, args = parseOptions()
     print(opts.mdp)
     if opts.compare == 'methods':
-        METHOD = ["QLearning"]
-        MDP = "graphmap_uncertainty"
-        # MDP = "stationary"
-        # MDP = "blockworld"
-        reward_plots(MDP, METHOD, _window=opts.window)
+        reward_plots(opts.mdp, opts.agent.split(" "), _window=opts.window)
