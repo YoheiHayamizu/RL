@@ -5,12 +5,6 @@ import random
 
 ACTIONS = ["up", "down", "left", "right"]
 
-MAP = [[' ', ' ', ' ', 'G'],
-       ['#', '#', ' ', '#'],
-       [' ', '#', ' ', ' '],
-       [' ', '#', '#', ' '],
-       ['S', ' ', ' ', ' ']]
-
 
 class BlockWorld(MDPBasisClass):
     def __init__(self,
