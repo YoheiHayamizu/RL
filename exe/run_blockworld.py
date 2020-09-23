@@ -10,7 +10,7 @@ if __name__ == "__main__":
     # GET THE BLOCKWORLD
     ###########################
     env = BlockWorld(
-        name="blockworld",
+        name=opts.mdpName,
         width=5,
         height=5,
         init_loc=(0, 0),

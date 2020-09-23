@@ -10,7 +10,7 @@ if __name__ == "__main__":
     ###########################
     env = GraphWorld(
         name=opts.mdpName,
-        graphmap_path="../mdp/graphworld/map.json"
+        graphmap_path="../mdp/graphworld/map2.json"
     )
     env.set_step_cost(1.0)
     env.set_goal_reward(50.0)

@@ -1,5 +1,5 @@
 import exe.exeutils
-from mdp.gridworld.gridworld import GridWorld, MAP2
+from mdp.gridworld.gridworld import GridWorld
 from agent.qlearning import QLearningAgent
 
 if __name__ == "__main__":
@@ -7,7 +7,9 @@ if __name__ == "__main__":
     ###########################
     # GET THE BLOCKWORLD
     ###########################
-    env = GridWorld( name="gridworld", gridmap=MAP2)
+    from mdp.gridworld.map2 import MAP2
+    env = GridWorld(name=opts.mdpName,
+                    gridmap=MAP2)
     env.set_step_cost(0.0)
     env.set_goal_reward(1.0)
 
