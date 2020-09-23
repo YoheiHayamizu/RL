@@ -7,7 +7,7 @@ if __name__ == "__main__":
     ###########################
     # GET THE BLOCKWORLD
     ###########################
-    env = GridWorld( name="gridworld", gridmap=MAP2 )
+    env = GridWorld( name="gridworld", gridmap=MAP2)
     env.set_step_cost(0.0)
     env.set_goal_reward(1.0)
 

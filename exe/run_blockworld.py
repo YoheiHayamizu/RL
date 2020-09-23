@@ -18,6 +18,8 @@ if __name__ == "__main__":
         walls_loc=((3, 1), (3, 2), (3, 3), (0, 2), (1, 2), (1, 1),),
         holes_loc=()
     )
+    env.set_step_cost(0.0)
+    env.set_goal_reward(1.0)
 
     ###########################
     # GET THE AGENT

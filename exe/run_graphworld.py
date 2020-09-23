@@ -9,12 +9,12 @@ if __name__ == "__main__":
     # GET THE BLOCKWORLD
     ###########################
     env = GraphWorld(
-        name="graphworld",
+        name=opts.mdpName,
         graphmap_path="../mdp/graphworld/map.json"
     )
-    env.set_step_cost(0.0)
-    env.set_goal_reward(1.0)
-    env.set_stack_cost(0.0)
+    env.set_step_cost(1.0)
+    env.set_goal_reward(50.0)
+    env.set_stack_cost(50.0)
 
     ###########################
     # GET THE AGENT

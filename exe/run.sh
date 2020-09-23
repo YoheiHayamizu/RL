@@ -11,5 +11,6 @@ echo $PYTHONPATH
 #python ../utils/graphics.py --mdp gridworld
 
 # Graphworld
-python run_graphworld.py
-python ../utils/graphics.py --mdp graphworld
+python run_graphworld.py --mdp
+python ../utils/graphics.py --mdp graphmap_uncertainty
+#python ../utils/graphics.py --mdp stationary

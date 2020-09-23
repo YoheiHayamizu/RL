@@ -97,12 +97,12 @@ def parse_options():
     parser.add_option('-a', '--agent',
                       action='store', metavar="AGENT", type='string', dest='agent', default="random",
                       help="""Agent type (options are  default %default)""")
-    parser.add_option('--mdp',
-                      action='store', metavar="MDP", type='string', dest='mdp', default="testGraph",
+    parser.add_option('--mdpName',
+                      action='store', metavar="MDP_NAME", type='string', dest='mdpName', default="testGraph",
                       help="""MDP name (options are default %default)""")
-    parser.add_option('--env',
-                      action='store', metavar="E", type='string', dest='env', default="env1",
-                      help='env (options are \'env1\', \'env2\' default %default)')
+    parser.add_option('--mappath',
+                      action='store', metavar="path", type='string', dest='path', default="../mdp/graphworld/map.json",
+                      help="""Map Path (options are default %default)""")
 
     opts, args = parser.parse_args()
 
