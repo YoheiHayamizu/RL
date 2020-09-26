@@ -31,7 +31,7 @@ class GraphWorld(MDPBasisClass):
             self.graph, self.G = self.make_graph(graphmap_path)
         else:
             self.graph, self.G = self.convert_graphworld()
-        self.init_graph = self.graph
+        self.init_graph = copy.deepcopy(self.graph)
 
         self.num_doors = len(node_has_door)
         self.number_of_states = (node_num - int(len(node_has_door) / 2)) * 2 ** len(node_has_door)
@@ -107,7 +107,7 @@ class GraphWorld(MDPBasisClass):
     def get_executable_actions(self, state=None):
         if state is None:
             return self.get_executable_actions(self.init_state)
-        return list(self.get_actions()[state])
+        return list(super().get_actions()[state])
 
     # Setter
 
@@ -174,7 +174,6 @@ class GraphWorld(MDPBasisClass):
                 a == "gothrough" or a == "opendoor" or a == "fail") and not self.is_goal_state(state):
             state.is_stack = True
             state.set_terminal(True)
-            print("stacked")
             return state
 
         node_id, door_id, door_open, success_rate, stack_rate, adjacent = self.graph[n].values()
@@ -201,7 +200,6 @@ class GraphWorld(MDPBasisClass):
             next_state = state
 
         if self.is_goal_state(next_state) and self.exit_flag:
-            print("goal")
             next_state.set_terminal(True)
 
         return next_state
@@ -222,7 +220,7 @@ class GraphWorld(MDPBasisClass):
             return 0 - self.step_cost
 
     def reset(self):
-        self.graph = copy.deepcopy(self.init_graph)
+        self.graph = self.init_graph
         return super().reset()
 
     def print_graph(self):
@@ -296,7 +294,7 @@ class GraphWorld(MDPBasisClass):
 
 
 class GraphWorldState(MDPStateClass):
-    def __init__(self, node_id, door_id=None, door_open=None, success_rate=1.0, stack_rate=0.0,
+    def __init__(self, node_id, door_id, door_open, success_rate=1.0, stack_rate=0.0,
                  is_terminal=False):
         """ Inheritance of MDPStateClass for graphworld
 
