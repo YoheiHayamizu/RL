@@ -1,6 +1,5 @@
 #!/bin/bash
 export PYTHONPATH=~/Documents/researches/RL/
-echo $PYTHONPATH
 
 ## Blockworld
 #python ./run_blockworld.py
@@ -11,6 +10,5 @@ echo $PYTHONPATH
 #python ../utils/graphics.py --mdp gridworld
 
 # Graphworld
-python run_graphworld.py --mdp
-python ../utils/graphics.py --mdp graphmap_uncertainty
-#python ../utils/graphics.py --mdp stationary
+python run_graphworld.py -s 1 -e 5000 -i 25
+python ../utils/graphics.py --mdp gridmap -w 50

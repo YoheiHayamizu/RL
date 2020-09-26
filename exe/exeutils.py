@@ -5,23 +5,19 @@ import optparse
 from exe.config import *
 
 
-def run_episodes(env, agent, step=50, episode=100, s=0, display_cb=None, display=False):
-    if display_cb is None:
-        display_cb = lambda state: env.render()
+def run_episodes(env, agent, step=50, episode=100, s=0, display=False):
     data_list = list()
     for e in range(episode):
         # INIT ENV AND AGENT
         state = env.reset()
         agent.reset_of_episode()
         cumulative_reward = 0.0
-        tmp = None
         print("-------- new episode: {0:02} starts --------".format(e))
         for t in range(0, step):
             # agent update actions which can be selected at this step
             agent.set_actions(env.get_executable_actions(state))
             # agent selects an action
             action = agent.act(state)
-            # print(state, action)
 
             # EXECUTE ACTION
             next_state, reward, done, info = env.step(action)
@@ -31,7 +27,7 @@ def run_episodes(env, agent, step=50, episode=100, s=0, display_cb=None, display
             cumulative_reward += reward
 
             if display:
-                display_cb(state)
+                env.render()
 
             # END IF DONE
             if done:
@@ -50,9 +46,9 @@ def run_episodes(env, agent, step=50, episode=100, s=0, display_cb=None, display
     df = pd.DataFrame(data_list, columns=['Episode', 'Timestep', 'Cumulative Reward', 'seed'] +
                                          list(env.get_params().keys()) +
                                          list(agent.get_params().keys()))
-    df.to_csv(LOG_DIR + "{0}_{1}_{2}_fin.csv".format(agent.name, env.name, s))
-    env.to_pickle(LOG_DIR + "mdp_{0}_{1}_{2}_fin.pkl".format(agent.name, env.name, s))
-    agent.to_pickle(LOG_DIR + "agent_{0}_{1}_{2}_fin.pkl".format(agent.name, env.name, s))
+    df.to_csv(LOG_DIR + "{0}_{1}_{2:02}_fin.csv".format(agent.name, env.name, s))
+    env.to_pickle(LOG_DIR + "mdp_{0}_{1}_{2:02}_fin.pkl".format(agent.name, env.name, s))
+    agent.to_pickle(LOG_DIR + "agent_{0}_{1}_{2:02}_fin.pkl".format(agent.name, env.name, s))
 
 
 def runs_episodes(_mdp, _agent, step=50, episode=100, seed=10):
