@@ -10,7 +10,7 @@ import seaborn as sns
 sns.set()
 sns.set_style("whitegrid")
 
-SPINE_COLOR = 'gray'
+SPINE_COLOR = 'black'  # this was gray
 
 
 def latexify(fig_width=None, fig_height=None, columns=1, labelsize=10):
@@ -31,7 +31,6 @@ def latexify(fig_width=None, fig_height=None, columns=1, labelsize=10):
     # Width and max height in inches for IEEE journals taken from
     # computer.org/cms/Computer.org/Journal%20templates/transactions_art_guide.pdf
 
-    MAX_HEIGHT_INCHES = 10.0
     LABELSIZE = labelsize
 
     assert (columns in [1, 2])
@@ -42,10 +41,6 @@ def latexify(fig_width=None, fig_height=None, columns=1, labelsize=10):
     if fig_height is None:
         golden_mean = (np.sqrt(5) - 1.0) / 2.0  # Aesthetic ratio
         fig_height = fig_width * golden_mean  # height in inches
-
-    # if fig_height > MAX_HEIGHT_INCHES:
-    #     print("WARNING: fig_height too large: {0} so will reduce to {1}inches.".format(fig_height, MAX_HEIGHT_INCHES))
-    #     fig_height = MAX_HEIGHT_INCHES
 
     params = {'backend': 'pdf',
               # 'text.latex.preamble': ['\usepackage{gensymb}'],
@@ -128,21 +123,6 @@ def line_graph(data, x, y, hue, filename, loc='lower left', bbox=(-0.1, 1.02, 1.
     plt.savefig(filename)
     del fig
     del ax
-
-#
-# def visited_plots(_mdp, _agent):
-#     from mdp.blockworld import decode
-#     for a in _agent:
-#         data = _load(_mdp, a.name)
-#         data = data.fillna(0.0)
-#         data_array = np.zeros((9, 9))
-#         for i in data.columns.values:
-#             x, y, _, _, _, _, _ = decode(int(i))
-#             data_array[8 - x, y] += data[i].sum()
-#         df = pd.DataFrame(data=data_array, index=range(8, -1, -1), columns=range(9))
-#         rate_df = pd.DataFrame(data=data_array / data_array.flatten().sum(), index=range(8, -1, -1), columns=range(9))
-#         heatmap(df, filename=FIG_DIR + "HEATMAP_{0}_{1}.pdf".format(_mdp, a), vmax=10000, vmin=0)
-#         heatmap(rate_df, filename=FIG_DIR + "HEATMAP_RATE_{0}_{1}.pdf".format(_mdp, a), vmax=0.05, vmin=0)
 
 
 def reward_plots(_mdp, _agent, _window=50):
