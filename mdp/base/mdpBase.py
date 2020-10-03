@@ -126,3 +126,6 @@ class MDPBasisClass(object):
     def to_pickle(self, filename):
         with open(filename, "wb") as f:
             dill.dump(self, f)
+
+    def render(self):
+        raise NotImplementedError
