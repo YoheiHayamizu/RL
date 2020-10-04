@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from mdp.base.mdpBase import MDPBasisClass, MDPStateClass
+from mdp.gridworld.map2 import MAP2
 
 from collections import namedtuple
 import numpy as np
@@ -237,22 +238,25 @@ class GridWorldState(MDPStateClass):
 
 
 if __name__ == "__main__":
-    ###########################
-    # GET THE GRIDWORLD
-    ###########################
-    env = GridWorld()
-    observation = env.reset()
-    random_action = random.choice(ACTIONS)
-    env.print_gird()
+    import exe.exeutils
+    from agent.qlearning import QLearningAgent
 
-    for t in range(500):
-        # if random_action == "opendoor":
-        env.print_gird()
-        print(observation, env.get_state_count(observation), random_action)
-        observation, reward, done, info = env.step(random_action)
-        random_action = random.choice(ACTIONS)
-        if done:
-            print("The agent arrived at tearminal state.")
-            # print(observation.get_params())
-            print("Exit")
-            exit()
+    opts = exe.exeutils.parse_options()
+    ###########################
+    # GET THE BLOCKWORLD
+    ###########################
+
+    env = GridWorld(name=opts.mdpName,
+                    gridmap=MAP2)
+    env.set_step_cost(0.0)
+    env.set_goal_reward(1.0)
+
+    ###########################
+    # GET THE AGENT
+    ###########################
+    qlearning = QLearningAgent(name="Q-Learning", actions=env.get_executable_actions())
+
+    ###########################
+    # RUN
+    ###########################
+    exe.exeutils.runs_episodes(env, qlearning, step=opts.iters, episode=opts.episodes, seed=opts.seeds)

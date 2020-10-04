@@ -63,42 +63,48 @@ def runs_episodes(_mdp, _agent, step=50, episode=100, seed=10):
 def parse_options():
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage=usage)
-    parser.add_option('--gamma',
-                      action='store', type='float', dest='gamma', default=0.95,
-                      help='Discount on future (default %default)')
-    parser.add_option('--epsilon',
-                      action='store', type='float', dest='epsilon', default=0.1, metavar="EPSILON",
-                      help='Chance of taking a random action in q-learning (default %default)')
-    parser.add_option('--alpha',
-                      action='store', type='float', dest='alpha', default=0.1, metavar="ALPHA",
-                      help='TD learning rate (default %default)')
-    parser.add_option('-i', '--iterations',
-                      action='store', type='int', dest='iters', default=100, metavar="STEP",
-                      help='Number of rounds of value iteration (default %default)')
-    parser.add_option('-e', '--episodes',
-                      action='store', type='int', dest='episodes', default=1000, metavar="EPISODE",
-                      help='Number of epsiodes of the MDP to run (default %default)')
     parser.add_option('-s', '--seed',
                       action='store', type='int', dest='seeds', default=1, metavar="SEED",
                       help='Number of seeds of the experiment to run (default %default)')
-    parser.add_option('-n', '--lookahead', action='store', type='int', dest='lookahead', default=10, metavar="N",
+    parser.add_option('-e', '--episodes',
+                      action='store', type='int', dest='episodes', default=1000, metavar="EPISODE",
+                      help='Number of epsiodes of the MDP to run (default %default)')
+    parser.add_option('-i', '--iterations',
+                      action='store', type='int', dest='iters', default=100, metavar="STEP",
+                      help='Number of rounds of value iteration (default %default)')
+    parser.add_option('--gamma',
+                      action='store', type='float', dest='gamma', default=0.95,
+                      help='Discount on future (default %default)')
+    parser.add_option('--alpha',
+                      action='store', type='float', dest='alpha', default=0.1, metavar="ALPHA",
+                      help='TD learning rate (default %default)')
+    parser.add_option('--epsilon',
+                      action='store', type='float', dest='epsilon', default=0.1, metavar="EPSILON",
+                      help='Chance of taking a random action in q-learning (default %default)')
+    parser.add_option('-n', '--lookahead', action='store', type='int', dest='lookahead', default=1, metavar="N",
                       help='Number of times of the planning to look ahead (default %default)')
     parser.add_option('-r', '--rmax',
-                      action='store', type='float', dest='rmax', default=1000,
+                      action='store', type='float', dest='rmax', default=1.0,
                       help='The upper bound of the reward function (default %default)')
-    parser.add_option('-u', '--update_count',
-                      action='store',
-                      type='int', dest='u_count', default=2, metavar="U_COUNT",
+    parser.add_option('-u', '--u_count',
+                      action='store', type='int', dest='u_count', default=2, metavar="UPDATE_COUNT",
                       help='Number of count of updating q-values (default %default)')
     parser.add_option('-a', '--agent',
                       action='store', metavar="AGENT", type='string', dest='agent', default="random",
-                      help="""Agent type (options are  default %default)""")
+                      help="""Agent type (options are  default %default)
+                      Q-Learning,
+                      Sarsa,
+                      Dyna-Q,
+                      RMAX
+                      """)
     parser.add_option('--mdpName',
-                      action='store', metavar="MDP_NAME", type='string', dest='mdpName', default="testGraph",
+                      action='store', metavar="MDP_NAME", type='string', dest='mdpName', default="noName",
                       help="""MDP name (options are default %default)""")
     parser.add_option('--mappath',
-                      action='store', metavar="path", type='string', dest='path', default="../mdp/graphworld/map.json",
-                      help="""Map Path (options are default %default)""")
+                      action='store', metavar="path", type='string', dest='path', default="./",
+                      help="""Map Path (options are default %default)
+                      ../mdp/graphworld/map2.json
+                      """)
 
     opts, args = parser.parse_args()
 

@@ -170,7 +170,7 @@ class BlockWorld(MDPBasisClass):
 
         new_x, new_y = next_state.x, next_state.y
         if ((new_x, new_y) in self.holes_loc or (new_x, new_y) == self.goal_loc) and self.exit_flag:
-            print("goal")
+            # print("goal")
             next_state.set_terminal(True)
         return next_state
 
@@ -284,33 +284,31 @@ class BlockWorldState(MDPStateClass):
 
 
 if __name__ == "__main__":
+    import exe.exeutils
+    from agent.qlearning import QLearningAgent
+
+    opts = exe.exeutils.parse_options()
     ###########################
-    # GET THE GRIDWORLD
+    # GET THE BLOCKWORLD
     ###########################
     env = BlockWorld(
-        name="blockworld",
+        name=opts.mdpName,
         width=5,
         height=5,
         init_loc=(0, 0),
         goal_loc=(4, 4),
         walls_loc=((3, 1), (3, 2), (3, 3), (0, 2), (1, 2), (1, 1),),
-        holes_loc=((2, 1), (3, 4)))
-    env.set_slip_prob(0.0)
-    env.set_step_cost(1.0)
-    env.set_hole_cost(50.0)
-    env.set_goal_reward(50.0)
-    observation = env.reset()
-    env.print_blockworld()
-    random_action = random.choice(ACTIONS)
+        holes_loc=()
+    )
+    env.set_step_cost(0.0)
+    env.set_goal_reward(1.0)
 
-    for t in range(500):
-        print(observation, env.get_state_count(observation), random_action)
-        random_action = random.choice(ACTIONS)
-        observation, reward, done, info = env.step(random_action)
-        print(observation, reward, done)
-        if done:
-            print("The agent arrived at tearminal state.")
-            print(env.get_params())
-            print("Exit")
-            exit()
-        # env.print_blockworld()
+    ###########################
+    # GET THE AGENT
+    ###########################
+    qlearning = QLearningAgent(name="Q-Learning", actions=env.get_executable_actions())
+
+    ###########################
+    # RUN
+    ###########################
+    exe.exeutils.runs_episodes(env, qlearning, step=opts.iters, episode=opts.episodes, seed=opts.seeds)

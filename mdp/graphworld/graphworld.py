@@ -18,8 +18,8 @@ class GraphWorld(MDPBasisClass):
                  graphmap_path=MAP_PATH + "map.json",
                  exit_flag=True,
                  step_cost=1.0,
-                 goal_reward=1,
-                 stack_cost=50
+                 goal_reward=1.0,
+                 stack_cost=50.0
                  ):
         self.name = name
         self.node_num = node_num
@@ -371,24 +371,30 @@ class GraphWorldState(MDPStateClass):
 
 
 if __name__ == "__main__":
-    ###########################
-    # GET THE GRIDWORLD
-    ###########################
-    env = GraphWorld()
-    observation = env.reset()
-    ACTIONS = env.get_executable_actions(observation)
-    random_action = random.sample(ACTIONS, 1)[0]
+    import exe.exeutils
+    from agent.qlearning import QLearningAgent
 
-    for t in range(500):
-        print(observation, env.get_state_count(observation), random_action)
-        observation, reward, done, info = env.step(random_action)
-        ACTIONS = env.get_executable_actions(observation)
-        random_action = random.sample(ACTIONS, 1)[0]
-        # env.print_graph()
-        print(observation, reward, done)
-        if done:
-            # env.save_graph_fig()
-            # print("The agent arrived at tearminal state.")
-            # print(observation.get_params())
-            print("Exit")
-            exit()
+    opts = exe.exeutils.parse_options()
+    ###########################
+    # GET THE BLOCKWORLD
+    ###########################
+    env = GraphWorld(
+        name=opts.mdpName,
+        graphmap_path=MAP_PATH + "map2.json",
+        init_node=11,
+        goal_node=17,
+        step_cost=1.0,
+        goal_reward=50.0,
+        stack_cost=50.0
+    )
+
+    ###########################
+    # GET THE AGENT
+    ###########################
+    qlearning = QLearningAgent(name="Q-Learning", actions=env.get_executable_actions())
+
+    ###########################
+    # RUN
+    ###########################
+    exe.exeutils.runs_episodes(env, qlearning, step=opts.iters, episode=opts.episodes, seed=opts.seeds)
+
