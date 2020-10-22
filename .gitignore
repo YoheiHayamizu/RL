@@ -1,8 +1,11 @@
 # My files
+knowledge_base_rl/
 datas/
+*run.sh
+
+# Pycharm & Macintosh
 .idea/
 .DS_Store
-*.p
 
 # Prerequisites
 .d
