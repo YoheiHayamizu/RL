@@ -18,7 +18,7 @@ class GraphWorld(MDPBasisClass):
                  graphmap_path=MAP_PATH + "map.json",
                  exit_flag=True,
                  step_cost=1.0,
-                 goal_reward=1.0,
+                 goal_reward=50.0,
                  stack_cost=50.0
                  ):
         self.name = name
@@ -31,6 +31,7 @@ class GraphWorld(MDPBasisClass):
             self.graph, self.G = self.make_graph(graphmap_path)
         else:
             self.graph, self.G = self.convert_graphworld()
+        # self.init_graph = self.graph
         self.init_graph = copy.deepcopy(self.graph)
 
         self.num_doors = len(node_has_door)
@@ -44,6 +45,12 @@ class GraphWorld(MDPBasisClass):
                                           self.graph[self.init_node]['door_open'],
                                           self.graph[self.init_node]['success_rate'],
                                           self.graph[self.init_node]['stack_rate'])
+
+        self.goal_state = GraphWorldState(self.graph[self.goal_node]['node_id'],
+                                          self.graph[self.goal_node]['door_id'],
+                                          self.graph[self.goal_node]['door_open'],
+                                          self.graph[self.goal_node]['success_rate'],
+                                          self.graph[self.goal_node]['stack_rate'])
         self.exit_flag = exit_flag
         super().__init__(self.init_state, self._transition_func, self._reward_func, self.get_actions())
 
@@ -79,23 +86,6 @@ class GraphWorld(MDPBasisClass):
                 for n in adjacent + [node_id]:
                     actions[GraphWorldState(node_id, door_id, False)].add((action, n))
                     actions[GraphWorldState(node_id, door_id, True)].add((action, n))
-
-            # for action in ["goto", "approach", "opendoor", "gothrough"]:
-            #     if action == "goto":
-            #         for n in adjacent:
-            #             if self.graph[n]['door_id'] is None:
-            #                 actions[GraphWorldState(node_id, door_id, False)].add((action, n))
-            #                 actions[GraphWorldState(node_id, door_id, True)].add((action, n))
-            #     elif action == "approach":
-            #         for n in adjacent:
-            #             if self.graph[n]['door_id'] is not None and door_id != self.graph[n]['door_id']:
-            #                 actions[GraphWorldState(node_id, door_id, False)].add((action, n))
-            #                 actions[GraphWorldState(node_id, door_id, True)].add((action, n))
-            #     elif door_id is not None and (action == "opendoor" or action == "gothrough"):
-            #         actions[GraphWorldState(node_id, door_id, False)].add((action, node_id))
-            #         actions[GraphWorldState(node_id, door_id, True)].add((action, node_id))
-        # for node, action in actions.items():
-        #     print(node, action)
         return actions
 
     def get_stack_cost(self):
@@ -103,6 +93,9 @@ class GraphWorld(MDPBasisClass):
 
     def get_goal_reward(self):
         return self.goal_reward
+
+    def get_goal_state(self):
+        return self.goal_state
 
     def get_executable_actions(self, state=None):
         if state is None:
@@ -134,7 +127,6 @@ class GraphWorld(MDPBasisClass):
         for datum in data['info']:
             graph[datum['node_id']] = datum
             graph_dict[datum['node_id']] = datum['adjacent']
-        self.name = data['name']
         self.node_num = len(graph_dict)
         G = nx.Graph(graph_dict)
         return graph, G
@@ -167,8 +159,7 @@ class GraphWorld(MDPBasisClass):
             if a == "gothrough" or a == "opendoor":
                 a = "fail"
             if a == "approach" or a == "goto":
-                miss = random.choice(self.get_adjacent(state.get_node_id()))
-                n = miss
+                n = random.choice(self.get_adjacent(state.get_node_id()))
 
         if 1 - state.stack_rate < rand and (
                 a == "gothrough" or a == "opendoor" or a == "fail") and not self.is_goal_state(state):
@@ -177,7 +168,7 @@ class GraphWorld(MDPBasisClass):
             return state
 
         node_id, door_id, door_open, success_rate, stack_rate, adjacent = self.graph[n].values()
-        if a == "opendoor"and state.has_door() and state.get_node_id() == node_id:
+        if a == "opendoor" and state.has_door() and state.get_node_id() == node_id:
             self.set_door_open(n)
             node_id, door_id, door_open, success_rate, stack_rate, adjacent = self.graph[n].values()
             next_state = GraphWorldState(node_id, door_id, door_open, success_rate, stack_rate)
@@ -373,6 +364,7 @@ class GraphWorldState(MDPStateClass):
 if __name__ == "__main__":
     import exe.exeutils
     from agent.qlearning import QLearningAgent
+    from agent.dynaq import DynaQAgent
 
     opts = exe.exeutils.parse_options()
     ###########################
@@ -381,8 +373,8 @@ if __name__ == "__main__":
     env = GraphWorld(
         name=opts.mdpName,
         graphmap_path=MAP_PATH + "map2.json",
-        init_node=11,
-        goal_node=17,
+        init_node=opts.start,
+        goal_node=opts.goal,
         step_cost=1.0,
         goal_reward=50.0,
         stack_cost=50.0
@@ -392,9 +384,10 @@ if __name__ == "__main__":
     # GET THE AGENT
     ###########################
     qlearning = QLearningAgent(name="Q-Learning", actions=env.get_executable_actions())
+    dynaq = DynaQAgent(name="Dyna-Q", actions=env.get_executable_actions(), lookahead=opts.lookahead)
 
     ###########################
     # RUN
     ###########################
     exe.exeutils.runs_episodes(env, qlearning, step=opts.iters, episode=opts.episodes, seed=opts.seeds)
-
+    exe.exeutils.runs_episodes(env, dynaq, step=opts.iters, episode=opts.episodes, seed=opts.seeds)
