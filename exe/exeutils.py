@@ -7,12 +7,13 @@ from exe.config import *
 
 def run_episodes(env, agent, step=50, episode=100, s=0, display=False):
     data_list = list()
+    np.random.seed(s)
     for e in range(episode):
         # INIT ENV AND AGENT
         state = env.reset()
         agent.reset_of_episode()
         cumulative_reward = 0.0
-        print("-------- new episode: {0:02} starts --------".format(e))
+        # print("-------- new episode: {0:02} starts --------".format(e))
         for t in range(0, step):
             # agent update actions which can be selected at this step
             agent.set_actions(env.get_executable_actions(state))
@@ -73,7 +74,7 @@ def parse_options():
                       action='store', type='int', dest='iters', default=100, metavar="STEP",
                       help='Number of rounds of value iteration (default %default)')
     parser.add_option('--gamma',
-                      action='store', type='float', dest='gamma', default=0.95,
+                      action='store', type='float', dest='gamma', default=0.99,
                       help='Discount on future (default %default)')
     parser.add_option('--alpha',
                       action='store', type='float', dest='alpha', default=0.1, metavar="ALPHA",
@@ -84,7 +85,7 @@ def parse_options():
     parser.add_option('-n', '--lookahead', action='store', type='int', dest='lookahead', default=1, metavar="N",
                       help='Number of times of the planning to look ahead (default %default)')
     parser.add_option('-r', '--rmax',
-                      action='store', type='float', dest='rmax', default=1.0,
+                      action='store', type='float', dest='rmax', default=50.0,
                       help='The upper bound of the reward function (default %default)')
     parser.add_option('-u', '--u_count',
                       action='store', type='int', dest='u_count', default=2, metavar="UPDATE_COUNT",
