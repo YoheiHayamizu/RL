@@ -3,6 +3,7 @@ import matplotlib
 import pandas as pd
 import matplotlib.pyplot as plt
 from exe.config import *
+import re
 import dill
 from collections import defaultdict
 import seaborn as sns
@@ -129,7 +130,8 @@ def reward_plots(_mdp, _agent, _window=50):
     import glob
     csvfiles = []
     for a in _agent:
-        csvfiles += glob.glob(LOG_DIR + "{0}_{1}_*.csv".format(a, _mdp))
+        csvfiles += [p for p in glob.glob(LOG_DIR + "{0}_{1}_*_fin.csv".format(a, _mdp))
+                     if re.search(LOG_DIR + "{0}_{1}_[0-9]+_fin.csv".format(a, _mdp), p)]
     df = pd.read_csv(csvfiles[0])
     df["Cumulative Reward"] = df["Cumulative Reward"].rolling(window=_window).mean()
     print(csvfiles)
@@ -179,4 +181,6 @@ if __name__ == "__main__":
     opts, args = parseOptions()
     print(opts.mdp)
     if opts.compare == 'methods':
+        print("Generating figures...")
+        print(opts.agent.split(" "))
         reward_plots(opts.mdp, opts.agent.split(" "), _window=opts.window)
