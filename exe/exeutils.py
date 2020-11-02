@@ -24,6 +24,7 @@ def run_episodes(env, agent, step=50, episode=100, s=0, display=False):
             next_state, reward, done, info = env.step(action)
             # agent updates values
             agent.update(state, action, reward, next_state, done)
+            # print(hash(state), state, action, reward, next_state, done)
             # update the cumulative reward
             cumulative_reward += reward
 
@@ -106,6 +107,10 @@ def parse_options():
                       help="""Map Path (options are default %default)
                       ../mdp/graphworld/map2.json
                       """)
+    parser.add_option('--start', action='store', type='int', dest='start', default=0,
+                      help='start node (default %default)')
+    parser.add_option('--goal', action='store', type='int', dest='goal', default=17,
+                      help='goal node (default %default)')
 
     opts, args = parser.parse_args()
 
