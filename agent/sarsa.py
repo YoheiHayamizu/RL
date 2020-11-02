@@ -1,4 +1,4 @@
-from RL.agent.AgentBasis import AgentBasisClass
+from agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
 import random
@@ -73,6 +73,7 @@ class SarsaAgent(AgentBasisClass):
         self.Q[state][action] += self.alpha * (reward + diff)
 
     def reset(self):
+        super().reset()
         self.alpha = self.init_alpha
         self.epsilon = self.init_epsilon
         self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))

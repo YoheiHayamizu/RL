@@ -1,4 +1,4 @@
-from RL.agent.AgentBasis import AgentBasisClass
+from agent.AgentBasis import AgentBasisClass
 import numpy as np
 import random
 from collections import defaultdict
@@ -107,9 +107,9 @@ class RMAXAgent(AgentBasisClass):
                     print(s, a, self.Q[s][a])
 
     def reset(self):
+        super().reset()
         self.u_count = self.init_urate
         self.epsilon = self.init_epsilon
-        self.episode_number = 0
         self.Q = defaultdict(lambda: defaultdict(lambda: self.rmax))
         self.C_sas = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
         self.rewards = defaultdict(lambda: defaultdict(list))

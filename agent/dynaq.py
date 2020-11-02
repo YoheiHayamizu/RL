@@ -1,4 +1,4 @@
-from .AgentBasis import AgentBasisClass
+from agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
 import random
@@ -102,7 +102,7 @@ class DynaQAgent(AgentBasisClass):
             self.Q[s][a] += self.alpha * (r + diff)
 
     def reset(self):
-        self.episode_number = 0
+        super().reset()
         self.alpha = self.init_alpha
         self.epsilon = self.init_epsilon
         self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))

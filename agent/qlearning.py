@@ -1,7 +1,6 @@
 from agent.AgentBasis import AgentBasisClass
 from collections import defaultdict
 import numpy as np
-import pandas as pd
 import random
 
 
@@ -71,9 +70,9 @@ class QLearningAgent(AgentBasisClass):
         # print(state, action, self.Q[state][action])
 
     def reset(self):
+        super().reset()
         self.alpha = self.init_alpha
         self.epsilon = self.init_epsilon
-        self.episode_number = 0
         self.Q = defaultdict(lambda: defaultdict(lambda: 0.0))
 
     def _get_max_q_key(self, state):
