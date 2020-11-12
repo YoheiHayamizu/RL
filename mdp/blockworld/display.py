@@ -48,14 +48,14 @@ class User:
         return self.action
 
 
-class GraphicsGridworldDisplay:
+class GridworldDisplay:
     def __init__(self, gridworld, size=120, speed=1.0):
-        self.gridworld = gridworld
+        self.blockworld = gridworld
         self.size = size
         self.speed = speed
 
     def start(self):
-        setup(self.gridworld, size=self.size)
+        setup(self.blockworld, size=self.size)
 
     def pause(self):
         wait_for_keys()
@@ -63,31 +63,31 @@ class GraphicsGridworldDisplay:
     def displayValues(self, agent, currentState=None, message='Agent Values'):
         values = defaultdict(float)
         policy = {}
-        states = self.gridworld.get_states()
+        states = self.blockworld.get_states()
         for state in states:
             values[state.get_state()] = agent.get_value(state.get_state())
             policy[state.get_state()] = agent.get_policy(state.get_state())
-        drawValues(self.gridworld, values, policy, currentState, message)
+        drawValues(self.blockworld, values, policy, currentState, message)
         sleep(0.05 / self.speed)
 
     def displayNullValues(self, currentState=None, message=''):
         values = defaultdict(float)
         # policy = {}
-        states = self.gridworld.get_states()
+        states = self.blockworld.get_states()
         for state in states:
             values[state] = 0.0
             # policy[state] = agent.getPolicy(state)
-        drawNullValues(self.gridworld, currentState, '')
+        drawNullValues(self.blockworld, currentState, '')
         # drawValues(self.gridworld, values, policy, currentState, message)
         sleep(0.05 / self.speed)
 
     def displayQValues(self, agent, currentState=None, message='Agent Q-Values'):
         qValues = defaultdict(float)
-        states = self.gridworld.get_states()
+        states = self.blockworld.get_states()
         for state in states:
-            for action in self.gridworld.get_actions(state):
-                qValues[(state, action)] = agent.get_q_val(state.get_state(), action)
-        drawQValues(self.gridworld, qValues, currentState, message)
+            for action in self.blockworld.get_actions():
+                qValues[(state, action)] = agent.get_q_val(state, action)
+        drawQValues(self.blockworld, qValues, currentState, message)
         sleep(0.05 / self.speed)
 
 
@@ -104,15 +104,15 @@ GRID_HEIGHT = -1
 MARGIN = -1
 
 
-def setup(gridworld, title="Gridworld Display", size=120):
+def setup(blockworld, title="Blockworld Display", size=120):
     global GRID_SIZE, MARGIN, GRID_HEIGHT
-    grid = gridworld.grid
+    block = blockworld.blocks
     WINDOW_SIZE = size
     GRID_SIZE = size
-    GRID_HEIGHT = gridworld.height
+    GRID_HEIGHT = blockworld.height
     MARGIN = GRID_SIZE * 0.75
-    screen_width = (gridworld.width - 1) * GRID_SIZE + MARGIN * 2
-    screen_height = (gridworld.height - 0.5) * GRID_SIZE + MARGIN * 2
+    screen_width = (blockworld.width - 1) * GRID_SIZE + MARGIN * 2
+    screen_height = (blockworld.height - 0.5) * GRID_SIZE + MARGIN * 2
 
     begin_graphics(screen_width,
                    screen_height,
@@ -173,26 +173,26 @@ def drawValues(gridworld, values, policy, currentState=None, message='State Valu
     text(pos, TEXT_COLOR, message, "Courier", -32, "bold", "c")
 
 
-def drawQValues(gridworld, qValues, currentState=None, message='State-Action Q-Values'):
-    grid = gridworld.grid
+def drawQValues(blockworld, qValues, currentState=None, message='State-Action Q-Values'):
+    block = blockworld.blocks
     blank()
-    stateCrossActions = [[(state, action) for action in gridworld.get_actions(state)] for state in
-                         gridworld.get_states()]
+    stateCrossActions = [[(state, action) for action in blockworld.get_actions()] for state in
+                         blockworld.get_states()]
     qStates = functools.reduce(lambda x, y: x + y, stateCrossActions, [])
     qValueList = [qValues[(state, action)] for state, action in qStates] + [0.0]
     minValue = min(qValueList)
     maxValue = max(qValueList)
-    for x in range(gridworld.width):
-        for y in range(gridworld.height):
-            state = gridworld.get_state(x, y)
-            gridType = grid[x][y][0]
+    for x in range(blockworld.width):
+        for y in range(blockworld.height):
+            state = blockworld.get_state(x, y)
+            gridType = block[x][y]
             isExit = state.is_terminal()
             # print(currentState, state)
             if currentState is not None:
                 isCurrent = (currentState == state)
             else:
                 isCurrent = None
-            actions = gridworld.get_actions(state)
+            actions = blockworld.get_actions()
             if actions is None or len(actions) == 0:
                 actions = [None]
             bestQ = max([qValues[(state, action)] for action in actions])
@@ -207,12 +207,12 @@ def drawQValues(gridworld, qValues, currentState=None, message='State-Action Q-V
             if gridType == '#':
                 drawSquare(x, y, 0, 0, 0, None, None, True, False, isCurrent)
             elif isExit:
-                if (x, y) == gridworld.goal_loc:
-                    value = gridworld.get_goal_reward()
-                elif (x, y) in gridworld.holes:
-                    value = -gridworld.get_hole_cost()
+                if (x, y) == blockworld.goal_loc:
+                    value = blockworld.get_goal_reward()
+                elif (x, y) in blockworld.holes:
+                    value = -blockworld.get_hole_cost()
                 else:
-                    value = 0 - gridworld.get_step_cost()
+                    value = 0 - blockworld.get_step_cost()
                 action = 'exit'
                 valString = '%.2f' % value
                 # print(type(value))
@@ -221,7 +221,7 @@ def drawQValues(gridworld, qValues, currentState=None, message='State-Action Q-V
                 drawSquareQ(x, y, q, minValue, maxValue, valStrings, actions, isCurrent)
             # print("'", gridType, "'", end="")
         # print()
-    pos = to_screen(((gridworld.width - 1.0) / 2.0, - 0.8))
+    pos = to_screen(((blockworld.width - 1.0) / 2.0, - 0.8))
     text(pos, TEXT_COLOR, message, "Courier", -32, "bold", "c")
 
 

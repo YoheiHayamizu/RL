@@ -1,5 +1,6 @@
 from mdp.base.mdpBase import MDPBasisClass, MDPStateClass
 import random
+import numpy as np
 
 # import copy
 
@@ -93,6 +94,15 @@ class BlockWorld(MDPBasisClass):
 
     def get_holes_loc(self):
         return self.holes_loc
+
+    def get_states(self):
+        flatten = lambda l: [item for sublist in l for item in sublist]
+        states = [[BlockWorldState(x, y) for y in range(self.height)] for x in range(self.width)]
+        return flatten(states)
+
+    def get_state(self, x, y):
+        states = [[BlockWorldState(x, y) for y in range(self.height)] for x in range(self.width)]
+        return states[x][y]
 
     def get_executable_actions(self, state=None):
         if state is None:
@@ -242,16 +252,16 @@ class BlockWorld(MDPBasisClass):
         return grid
 
     def convert_blockworld(self):
-        grid = [[' ' for y in range(self.height)] for x in range(self.width)]
+        block = [[' ' for y in range(self.height)] for x in range(self.width)]
         for x, y in self.holes_loc:
-            grid[x][y] = 'H'
+            block[x][y] = 'H'
         for el in self.walls_loc:
-            grid[el[0]][el[1]] = '#'
+            block[el[0]][el[1]] = '#'
         x, y = self.init_loc
-        grid[x][y] = 'S'
+        block[x][y] = 'S'
         x, y = self.goal_loc
-        grid[x][y] = 'G'
-        return grid
+        block[x][y] = 'G'
+        return block
 
     def print_blockworld(self):
         x, y = self.get_current_state().x, self.get_current_state().y
@@ -285,30 +295,109 @@ class BlockWorldState(MDPStateClass):
 
 if __name__ == "__main__":
     import exe.exeutils
+    from exe.config import *
     from agent.qlearning import QLearningAgent
+    from agent.rmax import RMAXAgent
+    from mdp.blockworld import display
 
-    opts = exe.exeutils.parse_options()
+    import pandas as pd
+
+    ############################
+    # SET ENVIRONMENT VARIABLE
+    ############################
+    ENV_NAME = "Blockworld"
+    NUM_EPISODE = 1000
+    NUM_STEP = 500
+    DOMAIN_LEARNING_RATE = 0.1  # 学習率
+    DOMAIN_GREEDY_EPSILON = 0.1  # ε-greedy 法の ε 値
+    DOMAIN_GAMMA = 0.99  # 割引率
+    SEED = 42
+
+    np.random.seed(SEED)
+    random.seed(SEED)
+
     ###########################
     # GET THE BLOCKWORLD
     ###########################
     env = BlockWorld(
-        name=opts.mdpName,
+        name=ENV_NAME,
         width=5,
         height=5,
         init_loc=(0, 0),
         goal_loc=(4, 4),
         walls_loc=((3, 1), (3, 2), (3, 3), (0, 2), (1, 2), (1, 1),),
-        holes_loc=()
+        holes_loc=(),
+        step_cost=0.0,
+        goal_reward=1
     )
-    env.set_step_cost(0.0)
-    env.set_goal_reward(1.0)
 
     ###########################
     # GET THE AGENT
     ###########################
-    qlearning = QLearningAgent(name="Q-Learning", actions=env.get_executable_actions())
+    # agent = QLearningAgent(name="Q-Learning", actions=env.get_executable_actions())
+    agent = RMAXAgent(name="RMAX", actions=env.get_executable_actions(), u_count=3)
+    agent.reset()
+
+    ###########################
+    # GET THE DISPLAY ADAPTER
+    ###########################
+    disp = display.GridworldDisplay(env, speed=100)
+    disp.start()
+
+
+    def displayCallback(state):
+        disp.displayQValues(agent, state, "CURRENT Q-VALUES")
+
 
     ###########################
     # RUN
     ###########################
-    exe.exeutils.runs_episodes(env, qlearning, step=opts.iters, episode=opts.episodes, seed=opts.seeds)
+    print("Running experiment: {0} in {1}".format(agent.name, env.name))
+
+    data_list = list()
+    for e in range(NUM_EPISODE):
+        # INIT ENV AND AGENT
+        state = env.reset()
+        agent.reset_of_episode()
+        cumulative_reward = 0.0
+        # print("-------- new episode: {0:02} starts --------".format(e))
+        for t in range(0, NUM_STEP):
+            # DISPLAY CURRENT STATE Q-VALUE
+            displayCallback(state)
+            # agent update actions which can be selected at this step
+            agent.set_actions(env.get_executable_actions(state))
+
+            # agent selects an action
+            action = agent.act(state)
+
+            # EXECUTE ACTION
+            next_state, reward, done, info = env.step(action)
+            # agent updates values
+            agent.update(state, action, reward, next_state, done)
+            # print(hash(state), state, action, reward, next_state, done)
+            # update the cumulative reward
+            cumulative_reward += reward
+
+            # END IF DONE
+            if done:
+                break
+
+            # update the current state
+            state = next_state
+
+        #############
+        # Logging
+        ############
+        data_list.append([e, agent.number_of_steps, cumulative_reward, SEED] +
+                         list(env.get_params().values()) +
+                         list(agent.get_params().values()))
+
+    df = pd.DataFrame(data_list, columns=['Episode', 'Timestep', 'Cumulative Reward', 'seed'] +
+                                         list(env.get_params().keys()) +
+                                         list(agent.get_params().keys()))
+    df.to_csv(LOG_DIR + "{0}_{1}_{2:02}_fin.csv".format(agent.name, env.name, SEED))
+    env.to_pickle(LOG_DIR + "mdp_{0}_{1}_{2:02}_fin.pkl".format(agent.name, env.name, SEED))
+    agent.to_pickle(LOG_DIR + "agent_{0}_{1}_{2:02}_fin.pkl".format(agent.name, env.name, SEED))
+
+    disp.displayQValues(agent, message="Q-VALUES AFTER " + str(NUM_EPISODE) + " EPISODES")
+    disp.pause()
