@@ -18,9 +18,9 @@ class QLearningAgent(AgentBasisClass):
     # Core
 
     def act(self, state):
-        action = random.choice(self.actions)
+        action = random.choice(self.__actions)
 
-        self.number_of_steps += 1
+        self._number_of_steps += 1
 
         return action
 

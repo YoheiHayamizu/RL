@@ -74,7 +74,7 @@ class RMAXAgent(AgentBasisClass):
     def act(self, state):
         action = self._get_max_q_key(state)
 
-        self.number_of_steps += 1
+        self._number_of_steps += 1
 
         return action
 
@@ -96,15 +96,15 @@ class RMAXAgent(AgentBasisClass):
             #                     # print(s, a, self.Q[s][a])
 
     def _update_policy_iteration(self):
-        lim = int(np.log(1 / (self.epsilon * (1 - self.gamma))) / (1 - self.gamma))
+        lim = int(np.log(1 / (self.epsilon * (1 - self.__gamma))) / (1 - self.__gamma))
         tmp = list(map(lambda x: itertools.product(self.C_sas.keys(), self.C_sas[x].keys()), self.C_sas.keys())) * lim
         for l in range(0, lim):
             for s, a in tmp[l]:
                 if self.get_count(s, a) >= self.u_count:
                     next_state_probabilities = self.get_transition(s, a)
-                    self.Q[s][a] = self.get_reward(s, a) + self.gamma * sum(
+                    self.Q[s][a] = self.get_reward(s, a) + self.__gamma * sum(
                         [p * self._get_max_q_val(ns) for ns, p in next_state_probabilities.items()])
-                    print(s, a, self.Q[s][a])
+                    # print(s, a, self.Q[s][a])
 
     def reset(self):
         super().reset()
@@ -121,7 +121,7 @@ class RMAXAgent(AgentBasisClass):
         return self._get_max_q(state)[1]
 
     def _get_max_q(self, state):
-        tmp = self.actions
+        tmp = self.__actions
         best_action = random.choice(tmp)
         actions = tmp[:]
         np.random.shuffle(actions)

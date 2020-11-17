@@ -53,11 +53,11 @@ class QLearningAgent(AgentBasisClass):
         elif self.explore == "softmax":
             action = self._soft_max_policy(state)
         elif self.explore == "random":
-            action = random.choice(self.actions)
+            action = random.choice(self.get_actions())
         else:
             action = self._epsilon_greedy_policy(state)  # default
 
-        self.number_of_steps += 1
+        self._number_of_steps += 1
 
         return action
 
@@ -65,7 +65,7 @@ class QLearningAgent(AgentBasisClass):
         next_action_value = 0
         if not done:
             next_action_value = self._get_max_q_val(next_state)
-        diff = self.gamma * next_action_value - self.get_q_val(state, action)
+        diff = self.get_gamma() * next_action_value - self.get_q_val(state, action)
         self.Q[state][action] += self.alpha * (reward + diff)
         # print(state, action, self.Q[state][action])
 
@@ -82,8 +82,8 @@ class QLearningAgent(AgentBasisClass):
         return self._get_max_q(state)[1]
 
     def _get_max_q(self, state):
-        tmp = self.actions
-        best_action = random.choice(self.actions)
+        tmp = self.get_actions()
+        best_action = random.choice(self.get_actions())
         actions = tmp[:]
         np.random.shuffle(actions)
         max_q_val = float("-inf")
@@ -99,7 +99,7 @@ class QLearningAgent(AgentBasisClass):
 
     def _epsilon_greedy_policy(self, state):
         if self.epsilon > np.random.random():
-            action = random.choice(self.actions)
+            action = random.choice(self.get_actions())
         else:
             action = self._get_max_q_key(state)
         return action

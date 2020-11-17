@@ -4,14 +4,14 @@ import dill
 
 class AgentBasisClass:
     def __init__(self, name, actions=None, gamma=0.99):
-        self.name = name
-        self.actions = actions
-        self.gamma = gamma
-        self.number_of_episodes = 0
-        self.number_of_steps = 0
+        self.__name = name
+        self.__actions = actions
+        self.__gamma = gamma
+        self._number_of_episodes = 0
+        self._number_of_steps = 0
 
     def __str__(self):
-        return str(self.name)
+        return str(self.__name)
 
     def __repr__(self):
         return self.__str__()
@@ -24,39 +24,42 @@ class AgentBasisClass:
         :return: <dict>
         """
         params = dict()
-        params["AgentName"] = self.name
-        params["Agent's actions"] = self.actions
-        params["gamma"] = self.gamma
+        params["AgentName"] = self.__name
+        params["Agent's actions"] = self.__actions
+        params["gamma"] = self.__gamma
         return params
 
     def get_name(self):
-        return self.name
+        return self.__name
 
     def get_gamma(self):
-        return self.gamma
+        return self.__gamma
+
+    def get_actions(self):
+        return self.__actions
 
     # Setter
 
     def set_name(self, new_name):
-        self.name = new_name
+        self.__name = new_name
 
     def set_gamma(self, new_gamma):
-        self.gamma = new_gamma
+        self.__gamma = new_gamma
 
     def set_actions(self, new_actions):
-        self.actions = new_actions
+        self.__actions = new_actions
 
     # Core
 
     def act(self, state): ...
 
     def reset(self):
-        self.number_of_steps = 0
-        self.number_of_episodes = 0
+        self._number_of_steps = 0
+        self._number_of_episodes = 0
 
     def reset_of_episode(self):
-        self.number_of_steps = 0
-        self.number_of_episodes += 1
+        self._number_of_steps = 0
+        self._number_of_episodes += 1
 
     def q_to_csv(self, filename):
         table = pd.DataFrame(self.Q, dtype=str)
