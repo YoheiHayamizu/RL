@@ -131,7 +131,7 @@ def reward_plots(_mdp, _agent, _window=50):
     csvfiles = []
     for a in _agent:
         csvfiles += [p for p in glob.glob(LOG_DIR + "{0}_{1}_*_fin.csv".format(a, _mdp))
-                     if re.search(LOG_DIR + "{0}_{1}_[0-9]+_fin.csv".format(a, _mdp), p)]
+                     if re.search(LOG_DIR + "{0}_{1}_[0-9][0-9]+_fin.csv".format(a, _mdp), p)]
     df = pd.read_csv(csvfiles[0])
     df["Cumulative Reward"] = df["Cumulative Reward"].rolling(window=_window).mean()
     print(csvfiles)
