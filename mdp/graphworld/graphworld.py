@@ -21,8 +21,8 @@ class GraphWorld(MDPBasisClass):
                  goal_reward=50.0,
                  stack_cost=50.0
                  ):
-        self.name = name
-        self.node_num = node_num
+        self.__name = name
+        self.__node_num = node_num
         self.init_node = init_node
         self.goal_node = goal_node
         self.nodes_has_door = node_has_door
@@ -55,7 +55,7 @@ class GraphWorld(MDPBasisClass):
         super().__init__(self.init_state, self._transition_func, self._reward_func, self.get_actions())
 
     def __str__(self):
-        return self.name + "_n-" + str(self.node_num)
+        return self.__name + "_n-" + str(self.__node_num)
 
     def __repr__(self):
         return self.__str__()
@@ -64,9 +64,9 @@ class GraphWorld(MDPBasisClass):
 
     def get_params(self):
         get_params = super().get_params()
-        get_params["EnvName"] = self.name
+        get_params["EnvName"] = self.__name
         get_params["init_state"] = self.get_init_state()
-        get_params["node_num"] = self.node_num
+        get_params["node_num"] = self.__node_num
         get_params["init_node"] = self.init_node
         get_params["goal_node"] = self.goal_node
         get_params["is_goal_terminal"] = self.exit_flag
@@ -75,32 +75,22 @@ class GraphWorld(MDPBasisClass):
         get_params["stack_cost"] = self.stack_cost
         return get_params
 
+    def get_name(self):
+        return self.__name
+
     def get_adjacent(self, node_id):
         return self.graph[node_id]['adjacent']
 
     def get_actions(self):
-        actions = defaultdict(lambda: set())
-        for node in self.graph.keys():
-            node_id, door_id, door_open, success_rate, stack_rate, adjacent = self.graph[node].values()
-            # for action in ["goto", "approach", "opendoor", "gothrough"]:
-            #     for n in adjacent + [node_id]:
-            #         actions[GraphWorldState(node_id, door_id, False)].add((action, n))
-            #         actions[GraphWorldState(node_id, door_id, True)].add((action, n))
+        actions = [(a, n) for a in ["goto", "approach", "opendoor", "gothrough"] for n in range(self.__node_num)]
 
-            for action in ["goto", "approach", "opendoor", "gothrough"]:
-                if action == "goto":
-                    for n in adjacent:
-                        if self.graph[n]['door_id'] is None:
-                            actions[GraphWorldState(node_id, door_id, False)].add((action, n))
-                            actions[GraphWorldState(node_id, door_id, True)].add((action, n))
-                elif action == "approach":
-                    for n in adjacent:
-                        if self.graph[n]['door_id'] is not None and door_id != self.graph[n]['door_id']:
-                            actions[GraphWorldState(node_id, door_id, False)].add((action, n))
-                            actions[GraphWorldState(node_id, door_id, True)].add((action, n))
-                elif door_id is not None and (action == "opendoor" or action == "gothrough"):
-                    actions[GraphWorldState(node_id, door_id, False)].add((action, node_id))
-                    actions[GraphWorldState(node_id, door_id, True)].add((action, node_id))
+        # actions = defaultdict(lambda: set())
+        # for node in self.graph.keys():
+        #     node_id, door_id, door_open, success_rate, stack_rate, adjacent = self.graph[node].values()
+        #     for action in ["goto", "approach", "opendoor", "gothrough"]:
+        #         for n in adjacent + [node_id]:
+        #             actions[GraphWorldState(node_id, door_id, False)].add((action, n))
+        #             actions[GraphWorldState(node_id, door_id, True)].add((action, n))
         # for node, action in actions.items():
         #     print(node, action)
         return actions
@@ -117,7 +107,8 @@ class GraphWorld(MDPBasisClass):
     def get_executable_actions(self, state=None):
         if state is None:
             return self.get_executable_actions(self.init_state)
-        return list(super().get_actions()[state])
+        # return list(super().get_actions()[state])
+        return self.get_actions()
 
     # Setter
 
@@ -144,7 +135,7 @@ class GraphWorld(MDPBasisClass):
         for datum in data['info']:
             graph[datum['node_id']] = datum
             graph_dict[datum['node_id']] = datum['adjacent']
-        self.node_num = len(graph_dict)
+        self.__node_num = len(graph_dict)
         G = nx.Graph(graph_dict)
         return graph, G
 
@@ -200,10 +191,11 @@ class GraphWorld(MDPBasisClass):
             n_node_id, n_door_id, n_door_open, n_success_rate, n_stack_rate, _ = self.graph[next_node].values()
             next_state = GraphWorldState(n_node_id, n_door_id, n_door_open, n_success_rate, n_stack_rate)
 
-        elif a == "approach" and door_id is not None and state.get_door_id() != door_id:
+        elif a == "approach" and n in self.get_adjacent(
+                state.get_node_id()) and door_id is not None and state.get_door_id() != door_id:
             next_state = GraphWorldState(node_id, door_id, door_open, success_rate, stack_rate)
 
-        elif a == "goto" and self.graph[n]['door_id'] is None:
+        elif a == "goto" and n in self.get_adjacent(state.get_node_id()) and self.graph[n]['door_id'] is None:
             next_state = GraphWorldState(node_id, door_id, door_open, success_rate, stack_rate)
 
         else:
@@ -377,13 +369,24 @@ class GraphWorldState(MDPStateClass):
         self.success_rate = new_success_rate
 
     def set_stack_rate(self, new_stack_rate):
-        self.new_stack_rate = new_stack_rate
+        self.stack_rate = new_stack_rate
 
 
 if __name__ == "__main__":
     import exe.exeutils
+    import utils.graphics
+    import numpy as np
+    import pandas as pd
+    from exe.config import *
     from agent.qlearning import QLearningAgent
     from agent.dynaq import DynaQAgent
+    from agent.knowledge_base_rl.darling import DARLINGAgent
+    from agent.knowledge_base_rl.gdq import GDQAgent
+
+    np.random.seed(8)
+    random.seed(8)
+    print(random.random())
+    print(np.random.random())
 
     opts = exe.exeutils.parse_options()
     ###########################
@@ -395,18 +398,33 @@ if __name__ == "__main__":
         init_node=opts.start,
         goal_node=opts.goal,
         step_cost=1.0,
-        goal_reward=50.0,
-        stack_cost=50.0
+        goal_reward=opts.rmax,
+        stack_cost=opts.rmax
     )
 
     ###########################
     # GET THE AGENT
     ###########################
-    qlearning = QLearningAgent(name="Q-Learning", actions=env.get_executable_actions())
-    dynaq = DynaQAgent(name="Dyna-Q", actions=env.get_executable_actions(), lookahead=opts.lookahead)
+    qlearning = QLearningAgent(name="Q-Learning", gamma=opts.gamma, actions=env.get_executable_actions())
+    dynaq = DynaQAgent(name="Dyna-Q", gamma=opts.gamma, actions=env.get_executable_actions(), lookahead=opts.lookahead)
+    darling = DARLINGAgent(name="DARLING", gamma=opts.gamma, actions=env.get_executable_actions(), goal_state=env.goal_state)
+    gdq = GDQAgent(name="GDQ", gamma=opts.gamma, actions=env.get_executable_actions(), lookahead=opts.lookahead, rmax=opts.rmax, goal_state=env.goal_state)
 
     ###########################
     # RUN
     ###########################
+    # exe.exeutils.runs_episodes(env, qlearning, step=opts.iters, episode=opts.episodes, seed=10)
+    # exe.exeutils.runs_episodes(env, dynaq, step=opts.iters, episode=opts.episodes, seed=10)
+
     exe.exeutils.runs_episodes(env, qlearning, step=opts.iters, episode=opts.episodes, seed=opts.seeds)
     exe.exeutils.runs_episodes(env, dynaq, step=opts.iters, episode=opts.episodes, seed=opts.seeds)
+    exe.exeutils.runs_episodes(env, darling, step=opts.iters, episode=opts.episodes, seed=opts.seeds)
+    exe.exeutils.runs_episodes(env, gdq, step=opts.iters, episode=opts.episodes, seed=opts.seeds)
+
+    ###########################
+    # MAKE PLOTS
+    ###########################
+    # utils.graphics.reward_plots(env.get_name(), [qlearning, darling, dynaq, gdq], _window=50)
+
+    print(random.random())
+    print(np.random.random())

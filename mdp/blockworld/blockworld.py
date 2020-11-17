@@ -295,7 +295,8 @@ class BlockWorldState(MDPStateClass):
 
 if __name__ == "__main__":
     import exe.exeutils
-    from exe.config import *
+    import utils.graphics
+    # from exe.config import *
     from agent.qlearning import QLearningAgent
     from agent.rmax import RMAXAgent
     from mdp.blockworld import display
@@ -315,6 +316,8 @@ if __name__ == "__main__":
 
     np.random.seed(SEED)
     random.seed(SEED)
+    print(random.random())
+    print(np.random.random())
 
     ###########################
     # GET THE BLOCKWORLD
@@ -334,8 +337,8 @@ if __name__ == "__main__":
     ###########################
     # GET THE AGENT
     ###########################
-    # agent = QLearningAgent(name="Q-Learning", actions=env.get_executable_actions())
-    agent = RMAXAgent(name="RMAX", actions=env.get_executable_actions(), u_count=3)
+    agent = QLearningAgent(name="Q-Learning", actions=env.get_executable_actions())
+    # agent = RMAXAgent(name="RMAX", actions=env.get_executable_actions(), u_count=3)
     agent.reset()
 
     ###########################
@@ -352,52 +355,61 @@ if __name__ == "__main__":
     ###########################
     # RUN
     ###########################
-    print("Running experiment: {0} in {1}".format(agent.name, env.name))
+    print("Running experiment: {0} in {1}".format(agent.__name, env.name))
 
-    data_list = list()
-    for e in range(NUM_EPISODE):
-        # INIT ENV AND AGENT
-        state = env.reset()
-        agent.reset_of_episode()
-        cumulative_reward = 0.0
-        # print("-------- new episode: {0:02} starts --------".format(e))
-        for t in range(0, NUM_STEP):
-            # DISPLAY CURRENT STATE Q-VALUE
-            displayCallback(state)
-            # agent update actions which can be selected at this step
-            agent.set_actions(env.get_executable_actions(state))
+    exe.exeutils.runs_episodes(env, agent, step=100, episode=1000, seed=8)
+    # data_list = list()
+    # for e in range(NUM_EPISODE):
+    #     # INIT ENV AND AGENT
+    #     state = env.reset()
+    #     agent.reset_of_episode()
+    #     cumulative_reward = 0.0
+    #     # print("-------- new episode: {0:02} starts --------".format(e))
+    #     for t in range(0, NUM_STEP):
+    #         # DISPLAY CURRENT STATE Q-VALUE
+    #         # displayCallback(state)
+    #         # agent update actions which can be selected at this step
+    #         agent.set_actions(env.get_executable_actions(state))
+    #
+    #         # agent selects an action
+    #         action = agent.act(state)
+    #
+    #         # EXECUTE ACTION
+    #         next_state, reward, done, info = env.step(action)
+    #         # agent updates values
+    #         agent.update(state, action, reward, next_state, done)
+    #         # print(hash(state), state, action, reward, next_state, done)
+    #         # update the cumulative reward
+    #         cumulative_reward += reward
+    #
+    #         # END IF DONE
+    #         if done:
+    #             break
+    #
+    #         # update the current state
+    #         state = next_state
+    #
+    #     #############
+    #     # Logging
+    #     ############
+    #     data_list.append([e, agent.number_of_steps, cumulative_reward, SEED] +
+    #                      list(env.get_params().values()) +
+    #                      list(agent.get_params().values()))
+    #
+    # df = pd.DataFrame(data_list, columns=['Episode', 'Timestep', 'Cumulative Reward', 'seed'] +
+    #                                      list(env.get_params().keys()) +
+    #                                      list(agent.get_params().keys()))
+    # df.to_csv("/Users/YoheiHayamizu/Documents/researches/RL/datas/logs/" + "{0}_{1}_{2:02}_fin.csv".format(agent.name, env.name, SEED))
+    # env.to_pickle("/Users/YoheiHayamizu/Documents/researches/RL/datas/logs/" + "mdp_{0}_{1}_{2:02}_fin.pkl".format(agent.name, env.name, SEED))
+    # agent.to_pickle("/Users/YoheiHayamizu/Documents/researches/RL/datas/logs/" + "agent_{0}_{1}_{2:02}_fin.pkl".format(agent.name, env.name, SEED))
+    #
+    # disp.displayQValues(agent, message="Q-VALUES AFTER " + str(NUM_EPISODE) + " EPISODES")
+    # disp.pause()
 
-            # agent selects an action
-            action = agent.act(state)
+    ###########################
+    # MAKE PLOTS
+    ###########################
+    utils.graphics.reward_plots(env.name, [agent], _window=1)
 
-            # EXECUTE ACTION
-            next_state, reward, done, info = env.step(action)
-            # agent updates values
-            agent.update(state, action, reward, next_state, done)
-            # print(hash(state), state, action, reward, next_state, done)
-            # update the cumulative reward
-            cumulative_reward += reward
-
-            # END IF DONE
-            if done:
-                break
-
-            # update the current state
-            state = next_state
-
-        #############
-        # Logging
-        ############
-        data_list.append([e, agent.number_of_steps, cumulative_reward, SEED] +
-                         list(env.get_params().values()) +
-                         list(agent.get_params().values()))
-
-    df = pd.DataFrame(data_list, columns=['Episode', 'Timestep', 'Cumulative Reward', 'seed'] +
-                                         list(env.get_params().keys()) +
-                                         list(agent.get_params().keys()))
-    df.to_csv(LOG_DIR + "{0}_{1}_{2:02}_fin.csv".format(agent.name, env.name, SEED))
-    env.to_pickle(LOG_DIR + "mdp_{0}_{1}_{2:02}_fin.pkl".format(agent.name, env.name, SEED))
-    agent.to_pickle(LOG_DIR + "agent_{0}_{1}_{2:02}_fin.pkl".format(agent.name, env.name, SEED))
-
-    disp.displayQValues(agent, message="Q-VALUES AFTER " + str(NUM_EPISODE) + " EPISODES")
-    disp.pause()
+    print(random.random())
+    print(np.random.random())
